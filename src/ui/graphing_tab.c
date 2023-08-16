@@ -11,6 +11,7 @@
 #include "../util/allocator.h"
 #include "../util/other.h"
 #include "../util/prettify_c.h"
+#include "../util/better_io.h"
 
 #define VECTOR_C ui_expr
 #define VECTOR_ITEM_DESTRUCTOR ui_expr_free
@@ -365,12 +366,14 @@ static str_t message_apply_constness(CalcExpr* last_expr, CalcBackend* calc,
       debugln("Calculating value of expression...");
       ExprContext ctx = calc_backend_get_context(calc);
       ExprValueResult val;
-      val = expr_calculate_val(&last_expr->expression, ctx);
+      val = expr_calculate(&last_expr->expression, ctx);
       debugln("Calculated!");
 
       if (val.is_ok) {
-        result = str_raw_owned(expr_value_str_print(&val.ok, null));
+        StringStream builder = string_stream_create();
+        expr_value_print(&val.ok, string_stream_stream(&builder));
         expr_value_free(val.ok);
+        result = string_stream_to_str_t(builder);
       } else {
         result = val.err_text;
       }

@@ -122,17 +122,43 @@ rebuild:
 
 
 # Build
-SOURCES=$(wildcard *.h) $(wildcard *.c) $(wildcard */*.h) $(wildcard */*.c) $(wildcard */*/*.h) $(wildcard */*/*.c) $(wildcard */*/*/*.h) $(wildcard */*/*/*.c)
+SOURCES=$(wildcard */*.h) $(wildcard */*.c) $(wildcard */*/*.h) $(wildcard */*/*.c) $(wildcard */*/*/*.h) $(wildcard */*/*/*.c)
 C_SOURCES=$(filter %.c,$(SOURCES))
 H_SOURCES=$(filter %.h,$(SOURCES))
 OBJ_FILES=$(C_SOURCES:.c=.o)
 
-${TARGET_FILE}: ${OBJ_FILES} | ${BUILD_DIR}/assets ${LIBRARIES_DIR}/lib.cache ${MKDIR_EXE} ${CP_EXE}
+# Modules
+UTIL_OBJS=$(filter util/%,$(OBJ_FILES))
+PARSER_OBJS=$(filter parser/%,$(OBJ_FILES))
+UI_OBJS=$(filter ui/%,$(OBJ_FILES))
+CALCULATOR_OBJS=$(filter calculator/%,$(OBJ_FILES))
+
+OTHER_SOURCES=$(wildcard *.h) $(wildcard *.c)
+OTHER_C_SOURCES=$(filter %.c,$(OTHER_SOURCES))
+OTHER_OBJS=$(OTHER_C_SOURCES:.c=.o)
+
+util.a: ${UTIL_OBJS}
+	ar -rc util.a ${UTIL_OBJS}
+	ranlib util.a
+	
+parser.a: ${PARSER_OBJS}
+	ar -rc parser.a ${PARSER_OBJS}
+	ranlib parser.a
+
+ui.a: ${UI_OBJS}
+	ar -rc ui.a ${UI_OBJS}
+	ranlib ui.a
+
+calculator.a: ${CALCULATOR_OBJS}
+	ar -rc calculator.a ${CALCULATOR_OBJS}
+	ranlib calculator.a
+	
+# Target file TDOOTODOTODOT TODO
+${TARGET_FILE}: ${OTHER_OBJS} ui.a parser.a util.a calculator.a | ${BUILD_DIR}/assets ${LIBRARIES_DIR}/lib.cache ${MKDIR_EXE} ${CP_EXE}
 	@echo
 	@echo ===== BUILDING EXECUTABLE =====
 	${MKDIR} ${BUILD_DIR}
 	${CP} ${LIBRARIES_DIR}/lib/*${DYLIB_EXT} ${BUILD_DIR}/
-#	${CP} assets ${BUILD_DIR}/
 	${CC} $^ ${LIBS_SRC} ${LIBS} -o ${TARGET_FILE}
 	@echo ===== BUILDING DONE =====
 	@echo
@@ -140,13 +166,6 @@ ${BUILD_DIR}/assets: assets/*
 	${CP} assets ${BUILD_DIR}/
 
 
-# Modules
-UTIL_OBJS=$(filter util/%,$(OBJ_FILES))
-PARSER_OBJS=$(filter parser/%,$(OBJ_FILES))
-
-util.a: ${UTIL_OBJS}
-	ar -rc util.a ${UTIL_OBJS}
-	ranlib util.a
 
 # This thing just builds any .o file
 %.o: %.c | ${H_SOURCES} ${LIBRARIES_DIR}/lib.cache
@@ -172,6 +191,7 @@ clean_lite: | ${RMRF_EXE}
 	${RMRF} *.o
 	${RMRF} */*.o
 	${RMRF} */*/*.o
+	${RMRF} *.a
 	${RMRF} ${TARGET_FILE}
 
 clean: clean_lite | ${RMRF_EXE}

@@ -1,7 +1,7 @@
 #ifndef SRC_PARSER_CALCULATOR_H_
 #define SRC_PARSER_CALCULATOR_H_
 
-#include "../parser/parser.h"
+#include "../parser/expr.h"
 
 #define CALC_EXPR_VARIABLE 20  // name
 #define CALC_EXPR_FUNCTION 21  // name, args

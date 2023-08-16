@@ -7,7 +7,6 @@
 
 #include "../calculator/calculator.h"
 #include "../nuklear_flags.h"
-#include "../parser/parser.h"
 #include "../util/camera.h"
 #include "../util/mesh.h"
 

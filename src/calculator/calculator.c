@@ -114,7 +114,7 @@ static ExprValueResult cb_context_get_variable(const CalcBackend* this,
     CalcExpr* item = &this->expressions.data[i];
     if (item->type is CALC_EXPR_VARIABLE and
         str_slice_eq_ccp(name, item->variable_name.string) is true)
-      return expr_calculate_val(&item->expression,
+      return expr_calculate(&item->expression,
                                 calc_backend_get_context(this));
   }
 
