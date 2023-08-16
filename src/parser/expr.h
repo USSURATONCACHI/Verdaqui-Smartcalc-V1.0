@@ -1,18 +1,12 @@
-#ifndef SRC_PARSER_PARSER_H_
-#define SRC_PARSER_PARSER_H_
-
-#include <stdbool.h>
-#include <stdio.h>
+#ifndef SRC_PARSER_EXPR_H_
+#define SRC_PARSER_EXPR_H_
 
 #include "../util/better_io.h"
 #include "../util/better_string.h"
-#include "../util/common_vecs.h"
+#include "expr_value.h"
 #include "token_tree.h"
-#include "tokenizer.h"
 
 typedef struct Expr Expr;
-
-typedef struct ExprValue ExprValue;
 
 // ===== vec_Expr
 #define VECTOR_H Expr
@@ -21,40 +15,6 @@ typedef struct ExprValue ExprValue;
 // ===== vec_vec_Expr
 #define VECTOR_H vec_Expr
 #include "../util/vector.h"
-
-// ===== vec_ExprValue
-#define VECTOR_H ExprValue
-#include "../util/vector.h"
-
-#define EXPR_VALUE_NUMBER 0
-#define EXPR_VALUE_VEC 1
-#define EXPR_VALUE_NONE 3
-struct ExprValue {
-  int type;
-  union {
-    double number;
-    vec_ExprValue vec;
-  };
-};
-
-void expr_value_free(ExprValue this);
-ExprValue expr_value_clone(const ExprValue* source);
-void expr_value_print(const ExprValue* this, OutStream stream);
-
-char* expr_value_str_print(const ExprValue* this, char* old_string);
-const char* expr_value_type_text(int type);
-
-typedef struct ExprValueResult {
-  bool is_ok;
-
-  union {
-    ExprValue ok;
-    struct {
-      str_t err_text;
-      const char* err_pos;
-    };
-  };
-} ExprValueResult;
 
 #define EXPR_NUMBER 1
 #define EXPR_VARIABLE 2
@@ -95,7 +55,6 @@ struct Expr {
     ExprBinaryOp binary_operator;
   };
 };
-void expr_free(Expr this);
 
 typedef struct ExprResult {
   bool is_ok;
@@ -122,26 +81,64 @@ typedef struct VecExprResult {
   };
 } VecExprResult;
 
-VecExprResult ExprResult_into_VecExprResult(ExprResult from);
+// HELPER TYPES
 
-typedef struct ExprContext {
-  bool (*is_function)(void*, StrSlice);
+typedef struct ExprFunctionInfo {
+  bool is_const;
+  const vec_str_t* args_names;
+  const Expr* expression;
+  int value_type;
+} ExprFunctionInfo;
 
-  ExprValueResult (*get_variable)(void*, StrSlice);
+typedef struct ExprVariableInfo {
+  bool is_const;
+  const Expr* expression;
+  const ExprValue* value;
+  int value_type;
+} ExprVariableInfo;
 
+typedef struct ExprContextVtable {
+  // Parsing
+  bool (*is_variable)(void* this, StrSlice var_name);
+  bool (*is_function)(void* this, StrSlice fun_name);
+
+  // Computation
+  ExprValueResult (*get_variable_val)(void*, StrSlice);
   ExprValueResult (*call_function)(void*, StrSlice, vec_ExprValue*);
 
-  void* context_data;
+  // Anasysis and compilation
+  bool (*is_expr_const)(void* this, const Expr* expr);
+  int (*get_expr_type)(void* this, const Expr* expr);
+
+  ExprVariableInfo (*get_variable_info)(void* this, StrSlice var_name);
+  ExprFunctionInfo (*get_function_info)(void* this, StrSlice fun_name);
+} ExprContextVtable;
+
+typedef struct ExprContext {
+  void* data;
+  const ExprContextVtable* vtable;
 } ExprContext;
 
-void expr_print(const Expr* this, OutStream out);
+// FUNCTIONS
 
-ExprValueResult expr_calculate_val(const Expr* this, ExprContext ctx);
+// -- Basic functionality
+void expr_free(Expr this);
+void expr_print(const Expr* this, OutStream out);
+Expr expr_clone(const Expr* this);
+Expr* expr_move_to_heap(Expr value);
+const char* expr_type_text(int type);
+
+// -- Parsing
+ExprResult expr_parse_string(const char* text, ExprContext ctx);
+ExprResult expr_parse_token_tree(TokenTree tree, ExprContext ctx);
 ExprResult expr_parse_tokens(vec_TokenTree tokens, char bracket,
                              ExprContext ctx);
-ExprResult expr_parse_token_tree(TokenTree tokens, ExprContext ctx);
-ExprResult expr_parse_string(const char* text, ExprContext ctx);
 
+// -- Computation
+ExprValueResult expr_calculate(const Expr* this, ExprContext ctx);
+
+/*
+Maybe later:
 vec_str_t expr_get_used_variables(const Expr* this);
 vec_str_t expr_get_used_functions(const Expr* this);
 
@@ -151,7 +148,6 @@ void expr_iter_variables(const Expr* this,
 void expr_iter_functions(const Expr* this,
                          void (*callback)(void* cb_data, const str_t* fn_name),
                          void* cb_data);
+*/
 
-char* expr_str_print(const Expr* this, char* out);
-
-#endif  // SRC_PARSER_PARSER_H_
+#endif  // SRC_PARSER_EXPR_H_

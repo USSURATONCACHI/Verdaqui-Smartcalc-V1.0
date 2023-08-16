@@ -1,7 +1,7 @@
 #ifndef SRC_PARSER_OPERATORS_FNS_H_
 #define SRC_PARSER_OPERATORS_FNS_H_
 
-#include "parser.h"
+#include "expr_value.h"
 
 typedef ExprValueResult (*OperatorFn)(ExprValue, ExprValue);
 OperatorFn expr_get_operator_fn(const char* name);

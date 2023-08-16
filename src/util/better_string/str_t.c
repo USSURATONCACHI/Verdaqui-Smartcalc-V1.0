@@ -6,8 +6,8 @@
 #include <string.h>
 
 #include "../allocator.h"
-#include "string_stream.h"
 #include "../prettify_c.h"
+#include "string_stream.h"
 
 str_t str_literal(const char* literal) { return (str_t){literal, false}; }
 str_t str_owned(const char* format, ...) {

@@ -1,14 +1,12 @@
 #ifndef SRC_PARSER_TOKEN_TREE_H_
 #define SRC_PARSER_TOKEN_TREE_H_
 
-#include <stdio.h>
-
+#include "../util/better_io.h"
 #include "../util/better_string.h"
 #include "../util/prettify_c.h"
 #include "tokenizer.h"
 
 typedef struct TokenTree TokenTree;
-void token_tree_free(TokenTree this);
 
 // vec_TokenTree header
 #define VECTOR_H TokenTree
@@ -19,10 +17,10 @@ struct TokenTree {
   union {
     Token token;
     struct {
-      vec_TokenTree tree;
-      char tree_bracket;
-    };
-  } data;
+      vec_TokenTree vec;
+      char bracket;
+    } tree;
+  };
 };
 
 typedef struct TokenTreeError {
@@ -38,17 +36,24 @@ typedef struct TokenTreeResult {
   };
 } TokenTreeResult;
 
-TokenTree token_tree_unwrap(TokenTreeResult res);
+typedef struct TtContext {
+  void* data;
+  bool (*is_function)(void*, StrSlice);
+} TtContext;
 
-TokenTree token_tree_token(Token token);
+// =====
 
-TokenTreeResult token_tree_parse(const char* text,
-                                 bool (*cb_is_function)(void*, StrSlice),
-                                 void* cb_data);
+void token_tree_free(TokenTree this);
+TokenTree token_tree_clone(const TokenTree* source);
+
+int token_tree_ttype(const TokenTree* this);
+int token_tree_ttype_skip(const TokenTree* this);
+Token* token_tree_get_only_token(TokenTree* this);
+void token_tree_print(const TokenTree* this, OutStream out);
+
+TokenTreeResult token_tree_parse(const char* text, TtContext ctx);
 TokenTree token_tree_simplify(TokenTree tree);
-
-void token_tree_print(const TokenTree* tree, OutStream stream);
-
-int tt_token_type(TokenTree* item);
+TokenTree token_tree_from_token(Token token);
+TokenTree token_tree_from_vec(vec_TokenTree vec, char bracket);
 
 #endif

@@ -139,6 +139,15 @@ ${TARGET_FILE}: ${OBJ_FILES} | ${BUILD_DIR}/assets ${LIBRARIES_DIR}/lib.cache ${
 ${BUILD_DIR}/assets: assets/*
 	${CP} assets ${BUILD_DIR}/
 
+
+# Modules
+UTIL_OBJS=$(filter util/%,$(OBJ_FILES))
+PARSER_OBJS=$(filter parser/%,$(OBJ_FILES))
+
+util.a: ${UTIL_OBJS}
+	ar -rc util.a ${UTIL_OBJS}
+	ranlib util.a
+
 # This thing just builds any .o file
 %.o: %.c | ${H_SOURCES} ${LIBRARIES_DIR}/lib.cache
 	${CC} -c $< ${INCLUDES} -o $@

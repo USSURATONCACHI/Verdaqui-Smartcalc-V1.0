@@ -86,7 +86,7 @@ static void printer_token_tree(OutStream stream, va_list* list,
   (*total_written) += 5;  // TODO: TOTAL WRITTEN FOR TOKENTREE
 }
 
-#include "../parser/parser.h"
+#include "../parser/expr_value.h"
 
 static void printer_expr_value(OutStream stream, va_list* list,
                                int* total_written) {
@@ -94,6 +94,7 @@ static void printer_expr_value(OutStream stream, va_list* list,
   expr_value_print(&val, stream);
   (*total_written) += 5;  // TODO: TOTAL WRITTEN FOR EXPRVALUE
 }
+#include "../parser/expr.h"
 
 static void printer_expr(OutStream stream, va_list* list, int* total_written) {
   Expr val = va_arg(*list, Expr);

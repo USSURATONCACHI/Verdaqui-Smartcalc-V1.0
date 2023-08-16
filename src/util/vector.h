@@ -12,6 +12,8 @@
 // input macro: DEBUG
 // input macro: VECTOR_NO_HEADERS
 
+// input macto: VECTOR_ITEM_CLONE
+
 #ifdef VECTOR_H
 #define VECTOR_ITEM_TYPE VECTOR_H
 #undef VECTOR_IMPLEMENTATION
@@ -71,6 +73,7 @@ typedef struct {
 #define VEC_CREATE CONCAT(VEC_T, _create)
 #define VEC_WITH_CAPACITY CONCAT(VEC_T, _with_capacity)
 #define VEC_CREATE_COPY CONCAT(VEC_T, _create_copy)
+#define VEC_CLONE CONCAT(VEC_T, _clone)
 #define VEC_FROM_RAW CONCAT(VEC_T, _from_raw)
 #define VEC_PUSH CONCAT(VEC_T, _push)
 #define VEC_INSERT CONCAT(VEC_T, _insert)
@@ -88,7 +91,8 @@ typedef struct {
 #ifndef VECTOR_NO_HEADERS
 VEC_STATIC_PREFIX VEC_T VEC_CREATE();
 VEC_STATIC_PREFIX VEC_T VEC_WITH_CAPACITY(int cap);
-VEC_STATIC_PREFIX VEC_T VEC_CREATE_COPY(ITEM_T* source, int length);
+VEC_STATIC_PREFIX VEC_T VEC_CREATE_COPY(const ITEM_T* source, int length);
+VEC_STATIC_PREFIX VEC_T VEC_CLONE(const VEC_T* source);
 VEC_STATIC_PREFIX VEC_T VEC_FROM_RAW(ITEM_T* source, int length);
 VEC_STATIC_PREFIX void VEC_PUSH(VEC_T* vec, ITEM_T item);
 VEC_STATIC_PREFIX void VEC_INSERT(VEC_T* vec, ITEM_T item, int index);
@@ -129,15 +133,25 @@ VEC_STATIC_PREFIX VEC_T VEC_WITH_CAPACITY(int cap) {
   return result;
 }
 
-VEC_STATIC_PREFIX VEC_T VEC_CREATE_COPY(ITEM_T* source, int length) {
+VEC_STATIC_PREFIX VEC_T VEC_CREATE_COPY(const ITEM_T* source, int length) {
   VEC_T result;
 
   result.data = (ITEM_T*)VECTOR_MALLOC_FN(sizeof(ITEM_T) * length);
+#ifdef VECTOR_ITEM_CLONE
+  for (int i = 0; i < length; i++) {
+    result.data[i] = VECTOR_ITEM_CLONE(&source[i]);
+  }
+#else
   memcpy(result.data, source, length * sizeof(ITEM_T));
+#endif
 
   result.length = length;
   result.capacity = length;
   return result;
+}
+
+VEC_STATIC_PREFIX VEC_T VEC_CLONE(const VEC_T* source) {
+  return VEC_CREATE_COPY(source->data, source->length);
 }
 
 VEC_STATIC_PREFIX VEC_T VEC_FROM_RAW(ITEM_T* source, int length) {
@@ -298,6 +312,7 @@ VEC_STATIC_PREFIX void VEC_FREE(VEC_T v) {
 
 #undef VECTOR_ITEM_TYPE
 #undef VECTOR_ITEM_DESTRUCTOR
+#undef VECTOR_ITEM_CLONE
 #undef VECTOR_H
 #undef VECTOR_C
 #undef VEC_T

@@ -49,7 +49,10 @@ struct TokenResult tk_next_token(const char* string) {
                        .data.number_number = 0.0},
       .next_token_pos = &string[1],  // Next symbol by default
   };
-  if (string[0] is '\0') return result;
+  if (not string or string[0] is '\0') {
+    result.next_token_pos = null;
+    return result;
+  }
 
   if (string[0] is ',') return scan_comma(string, result);
 
