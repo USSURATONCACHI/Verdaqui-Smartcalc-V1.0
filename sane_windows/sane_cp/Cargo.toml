@@ -1,0 +1,12 @@
+[package]
+name = "sane_cp"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+strip = true
+panic = "abort"
+lto = true
+
+[dependencies]
+wildmatch = "2.1.1"
