@@ -147,6 +147,7 @@ static void put_string_fmt(OutStream stream, Specificator info,
 
 static void put_n_fmt(OutStream stream, Specificator info, const char* format,
                       va_list* list, int* total_written) {
+  debugln("x_printf WARNING: %n formatter is not fully supported.");
   unused(stream);
   unused(format);
   if (strcmp(info.length_mod, "l") is 0) {

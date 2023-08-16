@@ -27,3 +27,7 @@ str_t str_slice_to_owned(StrSlice slice) {
 StrSlice str_slice_from_str_t(const str_t* str) {
   return (StrSlice){.start = str->string, .length = strlen(str->string)};
 }
+
+StrSlice str_slice_from_string(const char* str) {
+  return (StrSlice){.start = str, .length = strlen(str)};
+}

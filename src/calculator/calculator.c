@@ -5,78 +5,10 @@
 #include "../util/allocator.h"
 #include "native_functions.h"
 
-#define VECTOR_C CalcExpr
-#define VECTOR_ITEM_DESTRUCTOR calc_expr_free
-#include "../util/vector.h"  // vec_CalcExpr
 
-#define VECTOR_C CalcValue
-#define VECTOR_ITEM_DESTRUCTOR calc_value_free
-#include "../util/vector.h"  // vec_CalcValue
 
-void calc_value_free(CalcValue this) {
-  str_free(this.name);
-  expr_value_free(this.value);
-}
 
-void calc_expr_free(CalcExpr this) {
-  debugln("calc_expr_free - expression...");
-  expr_free(this.expression);
-  switch (this.type) {
-    case CALC_EXPR_VARIABLE:
-      debugln("calc_expr_free - var name...");
-      str_free(this.variable_name);
-      break;
 
-    case CALC_EXPR_PLOT:
-      break;
-
-    case CALC_EXPR_FUNCTION:
-      debugln("calc_expr_free - fun name...");
-      str_free(this.function.name);
-      debugln("calc_expr_free - fun args...");
-      vec_str_t_free(this.function.args);
-
-      break;
-
-    case CALC_EXPR_ACTION:
-      break;
-
-    default:
-      panic("Unknown type");
-  }
-  debugln("calc_expr_free - done.");
-}
-
-#define CONST_NAMES \
-  { "pi", "e" }
-#define CONST_VALUES \
-  { 3.1415926536, 2.7182818284 }
-
-CalcBackend calc_backend_create() {
-  const char* const names[] = CONST_NAMES;
-  double const values[] = CONST_VALUES;
-  CalcBackend result = {
-      .parent = null,
-      .expressions = vec_CalcExpr_create(),
-      .values = vec_CalcValue_with_capacity(LEN(values)),
-  };
-
-  assert_m(LEN(names) == LEN(values));
-  for (int i = 0; i < (int)LEN(values); i++)
-    vec_CalcValue_push(
-        &result.values,
-        (CalcValue){.name = str_literal(names[i]),
-                    .value = {.type = EXPR_VALUE_NUMBER, .number = values[i]}});
-
-  return result;
-}
-
-void calc_backend_free(CalcBackend this) {
-  debugln("Freeing CalcExprs %p...", this.expressions.data);
-  vec_CalcExpr_free(this.expressions);
-  debugln("Freeing CalcValues %p...", this.expressions.data);
-  vec_CalcValue_free(this.values);
-}
 
 static bool cb_context_is_function(const CalcBackend* this, StrSlice name) {
   const char* const native_functions[] = NATIVE_FUNCTION_NAMES;
@@ -815,57 +747,4 @@ bool calc_backend_is_function_constexpr(const CalcBackend* this,
   // debugln("Is expr itself const: %d", c);
   calc_backend_free(local_ctx);
   return c;
-}
-
-CalcValue* calc_backend_get_value(CalcBackend* this, const char* name) {
-  for (int i = 0; i < this->values.length; i++) {
-    CalcValue* item = &this->values.data[i];
-    // debugln("Cmp of '%s' and '%s' = %d", item->name.string, name,
-    // strcmp(item->name.string, name));
-    if (strcmp(item->name.string, name) is 0) return item;
-  }
-
-  if (this->parent)
-    return calc_backend_get_value(this->parent, name);
-  else
-    return null;
-}
-
-CalcExpr* calc_backend_get_function(CalcBackend* this, const char* name) {
-  for (int i = 0; i < this->expressions.length; i++) {
-    CalcExpr* item = &this->expressions.data[i];
-
-    if (item->type is CALC_EXPR_FUNCTION and
-        strcmp(name, item->function.name.string) is 0)
-      return item;
-  }
-
-  if (this->parent)
-    return calc_backend_get_function(this->parent, name);
-  else
-    return null;
-}
-
-CalcExpr* calc_backend_get_variable(CalcBackend* this, const char* name) {
-  for (int i = 0; i < this->expressions.length; i++) {
-    CalcExpr* item = &this->expressions.data[i];
-
-    if (item->type is CALC_EXPR_VARIABLE and
-        strcmp(name, item->variable_name.string) is 0)
-      return item;
-  }
-
-  if (this->parent)
-    return calc_backend_get_function(this->parent, name);
-  else
-    return null;
-}
-
-CalcExpr* calc_backend_last_expr(CalcBackend* this) {
-  if (not this) return null;
-
-  if (this->expressions.length > 0)
-    return &this->expressions.data[this->expressions.length - 1];
-  else
-    return null;
 }
