@@ -3,6 +3,8 @@
 #include <float.h>
 #include <math.h>
 
+#include "../util/allocator.h"
+
 static ExprValueResult calculator_func_cos(vec_ExprValue args);
 static ExprValueResult calculator_func_sin(vec_ExprValue args);
 static ExprValueResult calculator_func_tan(vec_ExprValue args);

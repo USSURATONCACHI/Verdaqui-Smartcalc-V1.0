@@ -122,7 +122,7 @@ void token_print(const Token* this, OutStream stream) {
       x_sprintf(stream, "%c", this->data.bracket_symbol);
       break;
     case TOKEN_OPERATOR:
-      x_sprintf(stream, "<%%slice>", this->data.operator_text);
+      x_sprintf(stream, "<%$slice>", this->data.operator_text);
       break;
     case TOKEN_COMMA:
       x_sprintf(stream, ",");

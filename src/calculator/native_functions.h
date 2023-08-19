@@ -1,7 +1,7 @@
 #ifndef SRC_CALCULATOR_NATIVE_FUNCTIONS_H_
 #define SRC_CALCULATOR_NATIVE_FUNCTIONS_H_
 
-#include "calculator.h"
+#include "../parser/expr_value.h"
 
 #define NATIVE_FUNCTION_NAMES                                                 \
   {                                                                           \

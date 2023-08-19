@@ -25,12 +25,31 @@ typedef struct CalcExpr {
   };
 } CalcExpr;
 
+typedef struct CalcExprResult {
+  bool is_ok;
+  union {
+    CalcExpr ok;
+    struct {
+      const char* err_pos;
+      str_t err_text;
+    };
+  };
+} CalcExprResult;
+
+#define CalcExprOk(val) \
+  (CalcExprResult) { .is_ok = true, .ok = (val) }
+#define CalcExprErr(pos, text) \
+  (CalcExprResult) { .is_ok = false, .err_pos = (pos), .err_text = (text) }
+
 void calc_expr_free(CalcExpr this);
 CalcExpr calc_expr_clone(const CalcExpr* source);
 const char* calc_expr_type_text(int type);
 void calc_expr_print(const CalcExpr* this, OutStream stream);
 
+CalcExprResult calc_expr_parse(ExprContext ctx, const char* text);
+CalcExprResult calc_expr_parse_tt(ExprContext ctx, TokenTree tree);
+
 #define VECTOR_H CalcExpr
 #include "../util/vector.h"
 
-#endif // SRC_CALCULATOR_CALC_EXPR_H_
+#endif  // SRC_CALCULATOR_CALC_EXPR_H_

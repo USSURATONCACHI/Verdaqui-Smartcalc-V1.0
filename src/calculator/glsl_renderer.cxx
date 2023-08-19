@@ -4,6 +4,7 @@
 #include "../util/allocator.h"
 #include "../util/better_string.h"
 #include "../util/prettify_c.h"
+#include "../util/allocator.h"
 
 #define VECTOR_C GlslFunction
 #define VECTOR_ITEM_DESTRUCTOR glsl_function_free

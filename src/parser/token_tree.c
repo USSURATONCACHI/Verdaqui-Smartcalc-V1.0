@@ -365,7 +365,7 @@ static TokenTree split_by(TokenTree tree, OpsSlice operators) {
         TokenTree to_push = {
             .is_token = false,
             .tree.vec = tail,
-            .tree.bracket = '{',
+            .tree.bracket = '<',
         };
         vec_TokenTree_push(&result.tree.vec, to_push);
         tail = vec_TokenTree_create();
@@ -381,7 +381,7 @@ static TokenTree split_by(TokenTree tree, OpsSlice operators) {
     TokenTree final = {
         .is_token = false,
         .tree.vec = tail,
-        .tree.bracket = '{',
+        .tree.bracket = '<',
     };
     vec_TokenTree_push(&result.tree.vec, final);
 
@@ -461,7 +461,7 @@ static TokenTree group_by_functions(TokenTree tree, TtContext ctx) {
     TokenTree group = {
         .is_token = false,
         .tree.vec = vec_TokenTree_create(),
-        .tree.bracket = '{',
+        .tree.bracket = '<',
     };
     TokenTree item_owned = vec_TokenTree_extract_order(&tree.tree.vec, i);
     TokenTree next_owned = vec_TokenTree_extract_order(&tree.tree.vec, i);
@@ -477,6 +477,15 @@ static TokenTree group_by_functions(TokenTree tree, TtContext ctx) {
 }
 
 // OTHER
+
+TokenTree token_tree_unwrap_wrappers(TokenTree tree) {
+  while (not tree.is_token and tree.tree.vec.length is 1) {
+    TokenTree child = vec_TokenTree_popget(&tree.tree.vec);
+    token_tree_free(tree);
+    tree = child;
+  }
+  return tree;
+}
 
 static bool is_opening_bracket(char c) {
   return c is '(' or c is '{' or c is '[';

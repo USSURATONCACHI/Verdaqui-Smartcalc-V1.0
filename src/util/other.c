@@ -32,3 +32,11 @@ struct nk_image load_nk_icon(const char *path) {
 void delete_nk_icon(struct nk_image img) {
   glDeleteTextures(1, (GLuint *)&img.handle.id);
 }
+
+static int tabs = 0;
+
+void debug_push() { tabs++; }
+void debug_pop() { tabs--; }
+void debug_print_tabs() {
+  for (int i = 0; i < tabs; i++) x_sprintf(DEBUG_OUT, "|   ");
+}

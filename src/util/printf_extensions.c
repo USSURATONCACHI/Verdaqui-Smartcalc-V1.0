@@ -15,16 +15,21 @@ static void printer_printable(OutStream stream, va_list* list,
                               int* total_written);
 static void printer_expr(OutStream stream, va_list* list, int* total_written);
 
-static void printer_calc_expr(OutStream stream, va_list* list, int* total_written);
-static void printer_calc_value(OutStream stream, va_list* list, int* total_written);
+static void printer_calc_expr(OutStream stream, va_list* list,
+                              int* total_written);
+static void printer_calc_value(OutStream stream, va_list* list,
+                               int* total_written);
 
-
-#define FORMATS \
-  { "$token_tree", "$calc_value", "$calc_expr", "$expr_value", "$printable", "$slice", "$token", "$expr" }
-#define PRINTERS                                                              \
-  {                                                                           \
-    printer_token_tree, printer_calc_value, printer_calc_expr, printer_expr_value, printer_printable, printer_slice, \
-        printer_token, printer_expr                                           \
+#define FORMATS                                                              \
+  {                                                                          \
+    "$token_tree", "$calc_value", "$calc_expr", "$expr_value", "$printable", \
+        "$slice", "$token", "$expr"                                          \
+  }
+#define PRINTERS                                                             \
+  {                                                                          \
+    printer_token_tree, printer_calc_value, printer_calc_expr,               \
+        printer_expr_value, printer_printable, printer_slice, printer_token, \
+        printer_expr                                                         \
   }
 
 int x_printf_ext_fmt_length(const char* format) {
@@ -108,16 +113,18 @@ static void printer_expr(OutStream stream, va_list* list, int* total_written) {
 
 #include "../calculator/calc_expr.h"
 
-static void printer_calc_expr(OutStream stream, va_list* list, int* total_written) {
+static void printer_calc_expr(OutStream stream, va_list* list,
+                              int* total_written) {
   CalcExpr val = va_arg(*list, CalcExpr);
   calc_expr_print(&val, stream);
-  (*total_written) += 5;  // TODO: TOTAL WRITTEN 
+  (*total_written) += 5;  // TODO: TOTAL WRITTEN
 }
 
 #include "../calculator/calc_value.h"
 
-static void printer_calc_value(OutStream stream, va_list* list, int* total_written) {
+static void printer_calc_value(OutStream stream, va_list* list,
+                               int* total_written) {
   CalcValue val = va_arg(*list, CalcValue);
   calc_value_print(&val, stream);
-  (*total_written) += 5;  // TODO: TOTAL WRITTEN 
+  (*total_written) += 5;  // TODO: TOTAL WRITTEN
 }

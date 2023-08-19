@@ -56,4 +56,6 @@ TokenTree token_tree_simplify(TokenTree tree);
 TokenTree token_tree_from_token(Token token);
 TokenTree token_tree_from_vec(vec_TokenTree vec, char bracket);
 
+TokenTree token_tree_unwrap_wrappers(TokenTree tree);
+
 #endif

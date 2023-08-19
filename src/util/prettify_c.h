@@ -31,14 +31,21 @@
 #define unused(var) var = var
 
 #define DEBUG_OUT outstream_stdout()
+
+void debug_push();
+void debug_pop();
+void debug_print_tabs();
+
 #define debugln(...)                                           \
   {                                                            \
+    debug_print_tabs();                                        \
     x_sprintf(DEBUG_OUT, "LOG (%s:%d): ", __FILE__, __LINE__); \
     x_sprintf(DEBUG_OUT, __VA_ARGS__);                         \
     x_sprintf(DEBUG_OUT, "\n");                                \
   }
 #define debug(...)                                             \
   {                                                            \
+    debug_print_tabs();                                        \
     x_sprintf(DEBUG_OUT, "LOG (%s:%d): ", __FILE__, __LINE__); \
     x_sprintf(DEBUG_OUT, __VA_ARGS__);                         \
   }

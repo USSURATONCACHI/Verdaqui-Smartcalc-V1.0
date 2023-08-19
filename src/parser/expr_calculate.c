@@ -29,26 +29,25 @@ ExprValueResult expr_calculate(const Expr* this, ExprContext ctx) {
            ctx.vtable->call_function);
 
   if (this->type is EXPR_NUMBER) {
-      return OkNum(this->number.value);
+    return OkNum(this->number.value);
 
   } else if (this->type is EXPR_VARIABLE) {
-    return ctx.vtable->get_variable_val(ctx.data, str_slice_from_str_t(&this->variable.name));
+    return ctx.vtable->get_variable_val(
+        ctx.data, str_slice_from_str_t(&this->variable.name));
 
   } else if (this->type is EXPR_FUNCTION) {
-      return expr_calculate_function(&this->function, ctx);
+    return expr_calculate_function(&this->function, ctx);
 
   } else if (this->type is EXPR_VECTOR) {
-      return expr_calculate_vector(&this->vector, ctx);
+    return expr_calculate_vector(&this->vector, ctx);
 
   } else if (this->type is EXPR_BINARY_OP) {
-      return expr_calculate_binary_op(&this->binary_operator, ctx);
+    return expr_calculate_binary_op(&this->binary_operator, ctx);
 
   } else {
-      panic("Invalid expr type");
-
+    panic("Invalid expr type");
   }
 }
-
 
 static ExprValueResult expr_calculate_function(const ExprFunction* this,
                                                ExprContext ctx) {
@@ -74,7 +73,8 @@ static ExprValueResult expr_calculate_function(const ExprFunction* this,
     panic("Unknown ExprValue type");
   }
 
-  ExprValueResult call_res = ctx.vtable->call_function(ctx.data, function_name, &args);
+  ExprValueResult call_res =
+      ctx.vtable->call_function(ctx.data, function_name, &args);
   vec_ExprValue_free(args);
   return call_res;
 }
@@ -117,7 +117,7 @@ static ExprValueResult expr_calculate_binary_op(const ExprBinaryOp* this,
     res = expr_calculate(this->rhs, ctx);
     if (res.is_ok) {
       ExprValue b = res.ok;
-      OperatorFn operator = expr_get_operator_fn(this->name.string);
+      OperatorFn operator= expr_get_operator_fn(this->name.string);
       assert_m(operator);
 
       res = operator(a, b);

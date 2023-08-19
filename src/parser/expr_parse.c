@@ -35,6 +35,8 @@ ExprResult expr_parse_string(const char* text, ExprContext ctx) {
 // =
 // =====
 ExprResult expr_parse_token_tree(TokenTree tree, ExprContext ctx) {
+  debugln("Parsing token tree '%$token_tree'", tree);
+  debug_push();
   vec_TokenTree tokens_vec;
 
   char bracket = '<';
@@ -47,7 +49,11 @@ ExprResult expr_parse_token_tree(TokenTree tree, ExprContext ctx) {
     forget(tokens);
   }
 
-  return expr_parse_tokens(tokens_vec, bracket, ctx);
+  ExprResult res = expr_parse_tokens(tokens_vec, bracket, ctx);
+  debug_pop();
+  debugln("Done parsing token tree '%$token_tree': %s", tree,
+          res.is_ok ? "success" : "fail");
+  return res;
 }
 
 // =====
@@ -139,7 +145,7 @@ static ExprResult parser_map_vecvec_to_vec(vec_vec_Expr total_exprs,
 }
 
 static ExprResult map_vec_to_expr(vec_Expr values, char bracket) {
-  ExprResult result;
+  ExprResult result = {.is_ok = true};
   if (values.length is 0) {
     result = ExprErr(str_literal("Empty expressions are not allowed (2)"));
     vec_Expr_free(values);
@@ -236,6 +242,7 @@ static ExprResult expr_parse_push_token_tree(vec_Expr* current_pos,
                                              ExprContext ctx, TokenTree item);
 
 /*
+
   bool res[] = {
       parser_is_function(&item, ctx),
       parser_is_indexing(&item, prev),
@@ -245,10 +252,12 @@ static ExprResult expr_parse_push_token_tree(vec_Expr* current_pos,
       parser_is_operator(&item, prev),
       parser_is_comma(&item, prev),
   };
-  debug("TokenTree: '%$token_tree' characteristic: [", item);
-  for (int i = 0; i < (int)LEN(res); i++)
-    debugc("%b", res[i]);
-  debugc("\n");
+  int old_len = current_pos->length;
+
+  debug("TokenTree (cpos %p changed %d -> %d): '%$token_tree' characteristic:
+  [", current_pos, old_len, current_pos->length, item); for (int i = 0; i <
+  (int)LEN(res); i++) debugc("%c", res[i] ? 'T' : 'F'); debugc("]\n");
+  debugln("Is unary: %b | Prev: %p", res[4], prev);
 */
 static ExprResult parser_parse_item(TokenTree item, ExprContext ctx,
                                     vec_vec_Expr* result) {
@@ -349,11 +358,11 @@ static ExprResult expr_parse_push_token_tree(vec_Expr* current_pos,
     // Recursively parse subtree and use it.
     // Do not free, we passed ownership to the function
     ExprResult parsed = expr_parse_token_tree(item, ctx);
-
-    if (not parsed.is_ok)
+    if (not parsed.is_ok) {
       result = parsed;
-    else
+    } else {
       expr_push_to_left(current_pos, parsed.ok);
+    }
   }
   return result;
 }
@@ -431,7 +440,6 @@ static void expr_push_to_left(vec_Expr* current_pos, Expr value) {
   Expr* prev = current_pos->length > 0
                    ? &current_pos->data[current_pos->length - 1]
                    : null;
-
   if (not try_push_depth(prev, value)) vec_Expr_push(current_pos, value);
 }
 

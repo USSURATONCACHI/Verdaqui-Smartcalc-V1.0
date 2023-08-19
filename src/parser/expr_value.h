@@ -38,4 +38,9 @@ typedef struct ExprValueResult {
   };
 } ExprValueResult;
 
+#define ExprValueOk(val) \
+  (ExprValueResult) { .is_ok = true, .ok = (val) }
+#define ExprValueErr(pos, text) \
+  (ExprValueResult) { .is_ok = false, .err_pos = (pos), .err_text = (text) }
+
 #endif  // SRC_PARSER_EXPR_VALUE_H_

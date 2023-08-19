@@ -83,6 +83,8 @@ typedef struct VecExprResult {
 
 // HELPER TYPES
 
+#define VALUE_TYPE_UNKNOWN -1
+
 typedef struct ExprFunctionInfo {
   bool is_const;
   const vec_str_t* args_names;

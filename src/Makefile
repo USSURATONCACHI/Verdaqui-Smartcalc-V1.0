@@ -154,7 +154,7 @@ calculator.a: ${CALCULATOR_OBJS}
 	ranlib calculator.a
 	
 # Target file TDOOTODOTODOT TODO
-${TARGET_FILE}: ${OTHER_OBJS} ui.a parser.a util.a calculator.a | ${BUILD_DIR}/assets ${LIBRARIES_DIR}/lib.cache ${MKDIR_EXE} ${CP_EXE}
+${TARGET_FILE}: ${OTHER_OBJS} ui.a calculator.a parser.a util.a | ${BUILD_DIR}/assets ${LIBRARIES_DIR}/lib.cache ${MKDIR_EXE} ${CP_EXE}
 	@echo
 	@echo ===== BUILDING EXECUTABLE =====
 	${MKDIR} ${BUILD_DIR}
@@ -169,7 +169,7 @@ ${BUILD_DIR}/assets: assets/*
 
 # This thing just builds any .o file
 %.o: %.c | ${H_SOURCES} ${LIBRARIES_DIR}/lib.cache
-	${CC} -c $< ${INCLUDES} -o $@
+	${CC} -c -fPIC $< ${INCLUDES} -o $@
 
 # This target unpacks libraries
 lib: ${LIBRARIES_DIR}/lib.cache

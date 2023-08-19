@@ -1,6 +1,7 @@
 #include "calc_value.h"
-#include "../util/prettify_c.h"
 
+#include "../util/allocator.h"
+#include "../util/prettify_c.h"
 
 #define VECTOR_C CalcValue
 #define VECTOR_ITEM_DESTRUCTOR calc_value_free
@@ -13,12 +14,11 @@ void calc_value_free(CalcValue this) {
 }
 
 CalcValue calc_value_clone(const CalcValue* this) {
-    return (CalcValue) {
-        .name = str_clone(&this->name),
-        .value = expr_value_clone(&this->value)
-    };
+  return (CalcValue){.name = str_clone(&this->name),
+                     .value = expr_value_clone(&this->value)};
 }
 
 void calc_value_print(const CalcValue* this, OutStream stream) {
-    x_sprintf(stream, "CalcValue(%s = %$expr_value)", this->name.string, this->value);
+  x_sprintf(stream, "CalcValue(%s = %$expr_value)", this->name.string,
+            this->value);
 }

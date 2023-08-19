@@ -7,11 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../calculator/glsl_renderer.h"
+// #include "../calculator/glsl_renderer.h"
 #include "../util/allocator.h"
+#include "../util/better_io.h"
 #include "../util/other.h"
 #include "../util/prettify_c.h"
-#include "../util/better_io.h"
 
 #define VECTOR_C ui_expr
 #define VECTOR_ITEM_DESTRUCTOR ui_expr_free
@@ -327,32 +327,13 @@ void ui_expr_update(GraphingTab* gt, ui_expr_t* this) {
   this->prev_active = this->textedit.active;
 }
 
-static bool is_calc_expr_const(CalcExpr* expr, CalcBackend* calc) {
-  switch (expr->type) {
-    case CALC_EXPR_ACTION:
-      return false;
-      break;
-    case CALC_EXPR_FUNCTION:
-      return calc_backend_is_function_constexpr(calc,
-                                                expr->function.name.string);
-      break;
-    case CALC_EXPR_VARIABLE:
-    case CALC_EXPR_PLOT:
-      return calc_backend_is_const_expr(calc, &expr->expression);
-      break;
-
-    default:
-      panic("Unknown CalcExpr type");
-  }
-}
-
 static str_t copy_from_nk_textedit(struct nk_text_edit* textedit) {
   char* text = nk_str_get(&textedit->string);
   int length = nk_str_len(&textedit->string);
 
   return str_owned("%.*s", length, text);
 }
-
+/*
 static str_t message_apply_constness(CalcExpr* last_expr, CalcBackend* calc,
                                      str_t message) {
   bool is_const = is_calc_expr_const(last_expr, calc);
@@ -384,83 +365,36 @@ static str_t message_apply_constness(CalcExpr* last_expr, CalcBackend* calc,
   }
 
   return result;
-}
-
-#define debug_exprln(before, expr, ...) \
-  {                                     \
-    debug(before);                      \
-    expr_print((expr), DEBUG_OUT);      \
-    debugc(__VA_ARGS__);                \
-    debugc("\n");                       \
-  }
+}*/
 
 void graphing_tab_update_calc(GraphingTab* this) {
   calc_backend_free(this->calc);
 
   this->calc = calc_backend_create();
 
-  GlslContext glsl = glsl_context_create();
+  // GlslContext glsl = glsl_context_create();
 
   for (int i = 0; i < this->expressions.length; i++) {
     ui_expr* item = &this->expressions.data[i];
 
     str_t buffer = copy_from_nk_textedit(&item->textedit);
 
-    // debugln("SAKE. Not even gonna try to add. Continuing...");
-    // str_free(buffer);
-    // continue;
-
-    debugln("DUMP before adding");
-    my_allocator_dump();
     debugln("Adding expr: %s", buffer.string);
+    debug_push();
     str_t message = calc_backend_add_expr(&this->calc, buffer.string);
+    debug_pop();
     debugln("Adding done (%s).", message.string);
     str_free(buffer);
     str_free(item->descr_text);
+    item->descr_text = message;
 
     CalcExpr* last_expr = calc_backend_last_expr(&this->calc);
 
     if (last_expr) {
-      debug_exprln("Added CalcExpr '", &last_expr->expression,
-                   "' of type %d | With message: %s", last_expr->type,
-                   message.string);
-
-      if (strncmp(message.string, "Ok", 2) is 0) {
-        // Ok
-        debugln("Added is 'Ok'");
-        item->descr_text =
-            message_apply_constness(last_expr, &this->calc, message);
-
-        // Lets try to convert to opengl
-        if (last_expr->type is CALC_EXPR_PLOT) {
-          debugln("Trying to convert to GLSL code...");
-
-          vec_str_t used_args = vec_str_t_create();
-          StrResult code_res = calc_backend_to_glsl_code(
-              &this->calc, &glsl, &last_expr->expression, &used_args);
-          vec_str_t_free(used_args);
-
-          if (code_res.is_ok) {
-            debugln("Success!");
-            str_t functions = glsl_context_get_all_functions(&glsl);
-            debugln("THE CODE POINTER: %p", code_res.data.string);
-            debugln("It uses these functions:%s\n\nTHE CODE:\n%s",
-                    functions.string, code_res.data.string);
-          } else {
-            debugln("Fail: %s", code_res.data.string);
-          }
-        }
-      } else {
-        // Error
-        debugln("Added is not 'Ok'");
-        item->descr_text = message;
-      }
-    } else {
-      // Error
-      item->descr_text = message;
+      debugln("Added CalcExpr '%$calc_expr' of type %s", &last_expr->expression,
+              calc_expr_type_text(last_expr->type));
     }
-    debugln("Final description: %s\n", item->descr_text.string);
   }
 
-  glsl_context_free(glsl);
+  // glsl_context_free(glsl);
 }

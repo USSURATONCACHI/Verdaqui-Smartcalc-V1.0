@@ -5,7 +5,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include "../calculator/calculator.h"
+#include "../calculator/calc_backend.h"
 #include "../nuklear_flags.h"
 #include "../util/camera.h"
 #include "../util/mesh.h"
