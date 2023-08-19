@@ -64,9 +64,9 @@ GraphingTab* graphing_tab_create() {
   // vec_ui_expr_push(&result->expressions,
   //  ui_expr_create("sin(x * 2e) + 4 * e^(sin(4))"));
   // vec_ui_expr_push(&result->expressions, ui_expr_create("sin(cos(y))"));
-  vec_ui_expr_push(&result->expressions, ui_expr_create("a = 2x + 3"));
-  vec_ui_expr_push(&result->expressions, ui_expr_create("b(a, b) = a^b + y"));
-  vec_ui_expr_push(&result->expressions, ui_expr_create("a = b(2, 3)"));
+  // vec_ui_expr_push(&result->expressions, ui_expr_create("a = 2x + 3"));
+  // vec_ui_expr_push(&result->expressions, ui_expr_create("b(a, b) = a^b + y"));
+  // vec_ui_expr_push(&result->expressions, ui_expr_create("a = b(2, 3)"));
   debugln("Done creating GraphingTab");
   // vec_ui_expr_push(&result->expressions, ui_expr_create("f(b, c) = b[c]"));
   // vec_ui_expr_push(
@@ -337,7 +337,6 @@ void ui_expr_update(GraphingTab* gt, ui_expr_t* this) {
 static str_t copy_from_nk_textedit(struct nk_text_edit* textedit) {
   char* text = nk_str_get(&textedit->string);
   int length = nk_str_len(&textedit->string);
-
   return str_owned("%.*s", length, text);
 }
 /*

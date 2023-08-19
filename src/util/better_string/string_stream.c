@@ -66,6 +66,7 @@ static int ss_puts(StringStream* this, const char* str) {
 }
 
 static int ss_put_slice(StringStream* this, const char* str, int length) {
+  if (length is 0) return '\n';
   if ((this->length + length) > this->capacity) ss_realloc(this, length);
 
   memcpy(&this->buffer[this->length], str, sizeof(char) * length);

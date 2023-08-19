@@ -131,13 +131,12 @@ static void put_string_fmt(OutStream stream, Specificator info,
     char* string = va_arg(*list, char*);
 
     outstream_put_slice(string, info.precision, stream);
-    (*total_written) += MIN((int)strlen(string), info.precision);
+    (*total_written) += info.precision is 0 ? 0 : MIN((int)strlen(string), info.precision);
   } else if (info.precision is - 1) {
     int len = va_arg(*list, int);
     char* string = va_arg(*list, char*);
-
     outstream_put_slice(string, len, stream);
-    (*total_written) += MIN((int)strlen(string), len);
+    (*total_written) += len is 0 ? 0 : MIN((int)strlen(string), len);
   } else {
     char* string = va_arg(*list, char*);
     outstream_puts(string, stream);
