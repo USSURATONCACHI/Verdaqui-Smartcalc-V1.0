@@ -67,4 +67,5 @@ void str_result_free(StrResult this) { str_free(this.data); }
 
 #define VECTOR_C str_t
 #define VECTOR_ITEM_DESTRUCTOR str_free
+#define VECTOR_ITEM_CLONE str_clone
 #include "../vector.h"

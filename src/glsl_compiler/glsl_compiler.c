@@ -196,16 +196,20 @@ static StrResult function_to_glsl(ExprContext ctx, GlslContext* glsl,
     str_free(result.data);
 
   debugln("Compiling FUNCTION '%$expr'", *expr);
+  debug_push();
 
   StrResult argument =
       glsl_compile_fn_args_values(ctx, glsl, expr->function.argument, used_args);
+
+  debug_pop();
   if (not argument.is_ok) {
     result = argument;
   } else {
     if (is_func_glsl_native(expr->function.name.string)) {
+      debugln("Function is native(%p '%s', %p '%s')", expr->function.name.string, expr->function.name.string, argument.data.string, argument.data.string);
       result = StrOk(call_native_function(expr->function.name.string,
-                                          argument.data.string));
-    } else {
+                                          argument.data.string + 2)); // +2 to skip comma
+     } else {
       str_t shader_func_name = str_owned("func_%s", expr->function.name.string);
 
       if (not glsl_context_get_function(glsl, shader_func_name.string))
@@ -217,8 +221,12 @@ static StrResult function_to_glsl(ExprContext ctx, GlslContext* glsl,
                               argument.data.string);
         result = StrOk(tmp);
       }
+      str_free(shader_func_name);
     }
+    str_free(argument.data);
   }
+
+  debugln("Done (%b): %s", result.is_ok, result.data.string);
 
   return result;
 }
@@ -239,7 +247,7 @@ static StrResult glsl_compile_fn_args_values(ExprContext ctx, GlslContext* glsl,
       if (not local_res.is_ok) {
         result = local_res;
       } else {
-        x_sprintf(os, "%s", local_res.data);
+        x_sprintf(os, ", %s", local_res.data.string);
         str_free(local_res.data);
       }
     }
@@ -249,7 +257,7 @@ static StrResult glsl_compile_fn_args_values(ExprContext ctx, GlslContext* glsl,
     if (not local_res.is_ok)
       result = local_res;
     else {
-      x_sprintf(os, "%s", local_res.data);
+      x_sprintf(os, ", %s", local_res.data.string);
       str_free(local_res.data);
     }
   }
@@ -283,6 +291,7 @@ static StrResult compile_function_to_glsl(ExprContext ctx, GlslContext* glsl,
           .args = vec_str_t_clone(info.args_names),
           .code = str_owned("return %s;", code.data.string),
           .name = str_owned("func_%s", expr->function.name.string)};
+
       glsl_context_add_function(glsl, func);
       str_free(code.data);
 

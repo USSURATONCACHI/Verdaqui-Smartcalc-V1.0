@@ -379,10 +379,16 @@ ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name);
 ExprFunctionInfo cb_get_function_info(CalcBackend* this, StrSlice fun_name);
 
 static bool cb_is_variable(CalcBackend* this, StrSlice var_name) {
+  if (calculator_get_native_function(var_name))
+    return false;
+
   return calc_backend_get_value_sslice(this, var_name) or
          calc_backend_get_variable_sslice(this, var_name);
 }
 static bool cb_is_function(CalcBackend* this, StrSlice fun_name) {
+  if (calculator_get_native_function(fun_name))
+    return true;
+
   return calc_backend_get_function_sslice(this, fun_name);
 }
 

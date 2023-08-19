@@ -30,17 +30,21 @@
 
 static Mesh create_square_mesh();
 
-GraphingTab* graphing_tab_create() {
+static GLuint load_shader() {
   const char* filepaths[] = {"assets/shaders/test_shader.frag",
                              "assets/shaders/test_shader.vert"};
   const GLenum shader_types[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER};
+  return sl_load_program(filepaths, shader_types, 2);
+}
+
+GraphingTab* graphing_tab_create() {
 
   debugln("Creating graphing tab (%d)...", (int)sizeof(GraphingTab));
   GraphingTab* result = (GraphingTab*)MALLOC(sizeof(GraphingTab));
   assert_alloc(result);
 
   (*result) = (GraphingTab){
-      .plot_shader = sl_load_program(filepaths, shader_types, 2),
+      .plot_shader = load_shader(),
       .camera = PlotCamera_new(0.0, 0.0),
       .square_mesh = create_square_mesh(),
 
@@ -59,6 +63,7 @@ GraphingTab* graphing_tab_create() {
   };
   // vec_ui_expr_push(&result->expressions,
   //  ui_expr_create("sin(x * 2e) + 4 * e^(sin(4))"));
+  // vec_ui_expr_push(&result->expressions, ui_expr_create("sin(cos(y))"));
   vec_ui_expr_push(&result->expressions, ui_expr_create("a = 2x + 3"));
   vec_ui_expr_push(&result->expressions, ui_expr_create("b(a, b) = a^b + y"));
   vec_ui_expr_push(&result->expressions, ui_expr_create("a = b(2, 3)"));
@@ -375,6 +380,7 @@ void graphing_tab_update_calc(GraphingTab* this) {
   this->calc = calc_backend_create();
 
   GlslContext glsl = glsl_context_create();
+  int drawn_plots_count = 0;
 
   for (int i = 0; i < this->expressions.length; i++) {
     ui_expr* item = &this->expressions.data[i];
@@ -397,7 +403,8 @@ void graphing_tab_update_calc(GraphingTab* this) {
               calc_expr_type_text(last_expr->type));
       
 
-      if (last_expr->type is CALC_EXPR_PLOT) {
+      if (last_expr->type is CALC_EXPR_PLOT and drawn_plots_count is 0) {
+        drawn_plots_count++;
         debugln("Gonna try to convert in into GLSL code...");
         debug_push();
 
@@ -412,6 +419,19 @@ void graphing_tab_update_calc(GraphingTab* this) {
         if (res.is_ok) {
           debugln("Result - OK: %s", res.data.string);
           glsl_context_print_all_functions(&glsl, DEBUG_OUT);
+
+          // Write to file
+          FILE* file = fopen("assets/shaders/cache/function.glsl", "w+");
+          assert_m(file);
+          OutStream os = outstream_from_file(file);
+          glsl_context_print_all_functions(&glsl, os);
+          x_sprintf(os, "\n\nfloat function(vec2 pos, vec2 step) {\nreturn %s;\n}\n", res.data.string);
+          fclose(file);
+
+          // Reload shader
+          glDeleteProgram(this->plot_shader);
+          this->plot_shader = load_shader();
+          assert_m(this->plot_shader);
         } else {
           debugln("Result - FAIL: %s", res.data.string);
         }

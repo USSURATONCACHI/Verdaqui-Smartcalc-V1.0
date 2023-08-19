@@ -13,7 +13,7 @@ uniform vec2 window_size;
 #define GRID_BASE 4
 
 float render(vec2 pos, vec2 step);
-float function(vec2 pos);
+float function(vec2 pos, vec2 step);
 bool does_intersect(vec2 pos, vec2 step);
 float draw_msaa(vec2 pos);
 
@@ -69,59 +69,11 @@ void main() {
 
     out_color = value * vec4(0.8, 0.2, 0.1, 1.0) + (1.0 - value) * bgc;
 }
-float var_a(vec2 pos, vec2 step){
-return ((2.00 * pos.x) + 3.00);
-}
 
-float func_b(vec2 pos, vec2 step, float arg_a, float arg_b){
-return (pow(arg_a, arg_b) + pos.y);
-}
-
-float uniq_2_0(vec2 pos, vec2 step){
-return (var_a(pos, step)) - (func_b(pos, step, 2, 3));
-}
-
-float uniq_3_0(vec2 pos, vec2 step){
-float
-    lb = uniq_2_0(pos + vec2(0.0, step.y), step),
-    rb = uniq_2_0(pos + step, step),
-    lt = uniq_2_0(pos, step),
-    rt = uniq_2_0(pos + vec2(step.x, 0.0), step);
-
-bool res =
-    sign_changes(lt, rt) ||
-    sign_changes(lt, rb) ||
-    sign_changes(lt, lb) ||
-
-    sign_changes(lb, rb) ||
-    sign_changes(lb, rt) ||
-
-    sign_changes(rb, rt);
-return ( res) ? 1.0 : 0.0;
-}
-
-float function(vec2 pos, vec2 step) {
-    return uniq_3_0(pos, step);
-    // return sin(cos(tan(x * y))) - (sin(cos(tan(x))) + sin(cos(tan(y))));  // Большой фрактальный график
-}
+#include_once "../cache/function.glsl"
 
 bool does_intersect(vec2 pos, vec2 step) {
     return function(pos, step) >= 1.0;
-    /*float 
-        lb = function(pos + vec2(0.0, step.y)), 
-        rb = function(pos + step), 
-        lt = function(pos), 
-        rt = function(pos + vec2(step.x, 0.0));
-
-    return
-        sign_changes(lt, rt) ||
-        sign_changes(lt, rb) ||
-        sign_changes(lt, lb) ||
-
-        sign_changes(lb, rb) ||
-        sign_changes(lb, rt) ||
-
-        sign_changes(rb, rt);*/
 }
 
 bool does_intersect_grid(vec2 pos, vec2 step, vec2 scale) {
