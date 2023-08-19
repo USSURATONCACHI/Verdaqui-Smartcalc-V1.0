@@ -34,7 +34,6 @@ str_t str_raw_owned(char* text) {
 
 void str_free(str_t s) {
   if (s.is_owned and s.string is_not null) {
-    // debugln("Freeing str_t %p (%d '%s')...", s.string, s.is_owned, s.string);
     FREE((void*)s.string);
   }
 }
@@ -61,6 +60,8 @@ str_t str_clone(const str_t* source) {
     return *source;
   }
 }
+
+void str_result_free(StrResult this) { str_free(this.data); }
 
 #include "vec_str_t.h"
 

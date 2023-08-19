@@ -231,6 +231,7 @@ TokenTreeResult token_tree_parse(const char* text, TtContext ctx) {
   TokenTreeResult result = group_by_brackets(tokens);
   if (result.is_ok) {
     TokenTree tree = group_by_commas(result.ok);
+    tree = token_tree_simplify(tree);
 
     // Split by all operators
     static const char* const operators[] = OPERATORS;
@@ -240,6 +241,7 @@ TokenTreeResult token_tree_parse(const char* text, TtContext ctx) {
       if (operators[i][0] is '\0') {
         tree = split_by(tree, (OpsSlice){.operators = &operators[ops_start],
                                          .length = i - ops_start});
+        tree = token_tree_simplify(tree);
         ops_start = i + 1;
       }
     }

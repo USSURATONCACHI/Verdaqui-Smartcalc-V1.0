@@ -13,6 +13,8 @@
 #include "../util/other.h"
 #include "../util/prettify_c.h"
 
+#include "../glsl_compiler/glsl_compiler.h"
+
 #define VECTOR_C ui_expr
 #define VECTOR_ITEM_DESTRUCTOR ui_expr_free
 #include "../util/vector.h"
@@ -372,7 +374,7 @@ void graphing_tab_update_calc(GraphingTab* this) {
 
   this->calc = calc_backend_create();
 
-  // GlslContext glsl = glsl_context_create();
+  GlslContext glsl = glsl_context_create();
 
   for (int i = 0; i < this->expressions.length; i++) {
     ui_expr* item = &this->expressions.data[i];
@@ -393,8 +395,30 @@ void graphing_tab_update_calc(GraphingTab* this) {
     if (last_expr) {
       debugln("Added CalcExpr '%$calc_expr' of type %s", &last_expr->expression,
               calc_expr_type_text(last_expr->type));
+      
+
+      if (last_expr->type is CALC_EXPR_PLOT) {
+        debugln("Gonna try to convert in into GLSL code...");
+        debug_push();
+
+        ExprContext ctx = calc_backend_get_context(&this->calc);
+        vec_str_t used_args = vec_str_t_create();
+        StrResult res = glsl_compile_expression(ctx, &glsl, &last_expr->expression, &used_args);
+        vec_str_t_free(used_args);
+
+        debug_pop();
+        debugln("Conversion done");
+
+        if (res.is_ok) {
+          debugln("Result - OK: %s", res.data.string);
+          glsl_context_print_all_functions(&glsl, DEBUG_OUT);
+        } else {
+          debugln("Result - FAIL: %s", res.data.string);
+        }
+        str_free(res.data);
+      }
     }
   }
 
-  // glsl_context_free(glsl);
+  glsl_context_free(glsl);
 }

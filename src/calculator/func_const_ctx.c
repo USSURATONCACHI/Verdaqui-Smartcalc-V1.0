@@ -123,6 +123,7 @@ static ExprVariableInfo fctx_get_variable_info(FuncConstCtx* this,
         .value_type = VALUE_TYPE_UNKNOWN,
         .value = null,
         .expression = null,  // We dont know arguments values at "compile"-time
+        .correct_context = func_const_ctx_context(this),
     };
   } else {
     return this->parent.vtable->get_variable_info(this, var_name);

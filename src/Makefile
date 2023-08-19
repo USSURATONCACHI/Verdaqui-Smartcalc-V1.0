@@ -132,6 +132,7 @@ UTIL_OBJS=$(filter util/%,$(OBJ_FILES))
 PARSER_OBJS=$(filter parser/%,$(OBJ_FILES))
 UI_OBJS=$(filter ui/%,$(OBJ_FILES))
 CALCULATOR_OBJS=$(filter calculator/%,$(OBJ_FILES))
+GLSL_COMPILER_OBJS=$(filter glsl_compiler/%,$(OBJ_FILES))
 
 OTHER_SOURCES=$(wildcard *.h) $(wildcard *.c)
 OTHER_C_SOURCES=$(filter %.c,$(OTHER_SOURCES))
@@ -152,9 +153,13 @@ ui.a: ${UI_OBJS}
 calculator.a: ${CALCULATOR_OBJS}
 	ar -rc calculator.a ${CALCULATOR_OBJS}
 	ranlib calculator.a
+
+glsl_compiler.a: ${GLSL_COMPILER_OBJS}
+	ar -rc glsl_compiler.a ${GLSL_COMPILER_OBJS}
+	ranlib glsl_compiler.a
 	
 # Target file TDOOTODOTODOT TODO
-${TARGET_FILE}: ${OTHER_OBJS} ui.a calculator.a parser.a util.a | ${BUILD_DIR}/assets ${LIBRARIES_DIR}/lib.cache ${MKDIR_EXE} ${CP_EXE}
+${TARGET_FILE}: ${OTHER_OBJS} ui.a glsl_compiler.a calculator.a parser.a util.a | ${BUILD_DIR}/assets ${LIBRARIES_DIR}/lib.cache ${MKDIR_EXE} ${CP_EXE}
 	@echo
 	@echo ===== BUILDING EXECUTABLE =====
 	${MKDIR} ${BUILD_DIR}

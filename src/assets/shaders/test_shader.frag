@@ -69,20 +69,19 @@ void main() {
 
     out_color = value * vec4(0.8, 0.2, 0.1, 1.0) + (1.0 - value) * bgc;
 }
-
-float var_a(vec2 pos, vec2 step) {
-return ((2.000000 * pos.x) + 3.000000);
+float var_a(vec2 pos, vec2 step){
+return ((2.00 * pos.x) + 3.00);
 }
 
-float func_b(vec2 pos, vec2 step, float a, float b) {
-return (pow(var_a(pos, step), b) + pos.y);
+float func_b(vec2 pos, vec2 step, float arg_a, float arg_b){
+return (pow(arg_a, arg_b) + pos.y);
 }
 
-float uniq_2_0(vec2 pos, vec2 step) {
-return (var_a(pos, step)) - (func_b(pos, step, 2.000000, 3.000000));
+float uniq_2_0(vec2 pos, vec2 step){
+return (var_a(pos, step)) - (func_b(pos, step, 2, 3));
 }
 
-float uniq_3_0(vec2 pos, vec2 step) {
+float uniq_3_0(vec2 pos, vec2 step){
 float
     lb = uniq_2_0(pos + vec2(0.0, step.y), step),
     rb = uniq_2_0(pos + step, step),

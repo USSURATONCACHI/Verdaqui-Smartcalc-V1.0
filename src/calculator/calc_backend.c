@@ -102,6 +102,8 @@ bool calc_backend_is_var_const(const CalcBackend* this, const char* name) {
 }
 
 bool calc_backend_is_func_const_sslice(const CalcBackend* this, StrSlice name) {
+  if (calculator_get_native_function(name)) return true;
+
   CalcExpr* expr = calc_backend_get_function_sslice((CalcBackend*)this, name);
   if (expr) {
     ExprContext ctx =
@@ -373,6 +375,9 @@ static ExprValueResult cb_get_variable_val(CalcBackend*, StrSlice);
 
 static int cb_get_expr_type(CalcBackend* this, const Expr* expr);
 
+ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name);
+ExprFunctionInfo cb_get_function_info(CalcBackend* this, StrSlice fun_name);
+
 static bool cb_is_variable(CalcBackend* this, StrSlice var_name) {
   return calc_backend_get_value_sslice(this, var_name) or
          calc_backend_get_variable_sslice(this, var_name);
@@ -417,46 +422,6 @@ static int cb_get_expr_type(CalcBackend* this, const Expr* expr) {
   return calc_backend_get_expr_type(this, expr);
 }
 
-ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name) {
-  CalcValue* val = calc_backend_get_value_sslice(this, var_name);
-  if (val)
-    return (ExprVariableInfo){
-        .is_const = true,
-        .value_type = val->value.type,
-        .value = &val->value,
-        .expression = null,
-    };
-
-  CalcExpr* expr = calc_backend_get_variable_sslice(this, var_name);
-  if (expr) {
-    ExprContext ctx = calc_backend_get_var_context_sslice(this, var_name);
-    assert_m(ctx.data);
-    return (ExprVariableInfo){
-        .is_const = calc_backend_is_expr_const(this, &expr->expression),
-        .expression = &expr->expression,
-        .value = null,
-        .value_type = calc_backend_get_expr_type(this, &expr->expression),
-    };
-  } else {
-    panic("Variable '%$slice' not found", var_name);
-  }
-}
-
-ExprFunctionInfo cb_get_function_info(CalcBackend* this, StrSlice fun_name) {
-  CalcExpr* fun = calc_backend_get_function_sslice(this, fun_name);
-  if (fun) {
-    ExprContext ctx = calc_backend_get_fun_context_sslice(this, fun_name);
-    assert_m(ctx.data);
-    return (ExprFunctionInfo){
-        .is_const = calc_backend_is_func_const_sslice(this, fun_name),
-        .args_names = &fun->function.args,
-        .expression = &fun->expression,
-        .value_type = VALUE_TYPE_UNKNOWN  // TODO: unknown value type
-    };
-  } else {
-    panic("Function '%$function' not found", fun_name)
-  }
-}
 
 ExprContext calc_backend_get_context(CalcBackend* this) {
   static const ExprContextVtable table = {
@@ -469,8 +434,41 @@ ExprContext calc_backend_get_context(CalcBackend* this) {
       .is_expr_const = (void*)calc_backend_is_expr_const,
       .get_expr_type = (void*)cb_get_expr_type,
 
-      .get_variable_info = null,
-      .get_function_info = null,
+      .get_variable_info = (void*)cb_get_variable_info,
+      .get_function_info = (void*)cb_get_function_info,
   };
   return (ExprContext){.data = this, .vtable = &table};
+}
+
+ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name) {
+  CalcExpr* expr = calc_backend_get_variable_sslice(this, var_name);
+  CalcValue* val = calc_backend_get_value_sslice(this, var_name);
+  ExprContext ctx = calc_backend_get_var_context_sslice(this, var_name);
+
+  if (not expr and not val)
+    return cb_get_variable_info(this->parent, var_name);
+
+  ExprVariableInfo result = {
+      .expression = expr ? &expr->expression : null,
+      .value = val ? &val->value : null,
+      .is_const = val or calc_backend_is_var_const_sslice(this, var_name),
+      .value_type = VALUE_TYPE_UNKNOWN,
+      .correct_context = ctx,
+  };
+  return result;
+}
+ExprFunctionInfo cb_get_function_info(CalcBackend* this, StrSlice fun_name) {
+  CalcExpr* expr = calc_backend_get_function_sslice(this, fun_name);
+
+  if (not expr)
+    return cb_get_function_info(this->parent, fun_name);
+
+  ExprFunctionInfo result = {
+      .is_const = calc_backend_is_func_const_sslice(this, fun_name),
+      .correct_context = calc_backend_get_fun_context_sslice(this, fun_name),
+      .expression = expr ? &expr->expression : null,
+      .value_type = VALUE_TYPE_UNKNOWN,
+      .args_names = expr ? &expr->function.args : null,
+  };
+  return result;
 }

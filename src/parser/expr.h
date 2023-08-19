@@ -85,19 +85,9 @@ typedef struct VecExprResult {
 
 #define VALUE_TYPE_UNKNOWN -1
 
-typedef struct ExprFunctionInfo {
-  bool is_const;
-  const vec_str_t* args_names;
-  const Expr* expression;
-  int value_type;
-} ExprFunctionInfo;
+typedef struct ExprFunctionInfo ExprFunctionInfo;
 
-typedef struct ExprVariableInfo {
-  bool is_const;
-  const Expr* expression;
-  const ExprValue* value;
-  int value_type;
-} ExprVariableInfo;
+typedef struct ExprVariableInfo ExprVariableInfo;
 
 typedef struct ExprContextVtable {
   // Parsing
@@ -120,6 +110,22 @@ typedef struct ExprContext {
   void* data;
   const ExprContextVtable* vtable;
 } ExprContext;
+
+typedef struct ExprFunctionInfo {
+  bool is_const;
+  const vec_str_t* args_names;
+  const Expr* expression;
+  int value_type;
+  ExprContext correct_context;
+} ExprFunctionInfo;
+
+typedef struct ExprVariableInfo {
+  bool is_const;
+  const Expr* expression;
+  const ExprValue* value;
+  int value_type;
+  ExprContext correct_context;
+} ExprVariableInfo;
 
 // FUNCTIONS
 
