@@ -100,7 +100,7 @@ static TokenResult scan_bracket(const char* string, TokenResult result) {
 // =
 // =====
 bool tk_is_symbol_allowed(char c) {
-  const char* allowed = " ,!=<>+-*/^%";
+  const char* allowed = " .,!=<>+-*/^%";
 
   return is_letter(c) or is_digit(c) or is_bracket(c) or strchr(allowed, c);
 }
@@ -192,7 +192,7 @@ static bool check_operator(const char* string, struct TokenResult* result) {
 static struct TokenResult scan_ident(const char* string,
                                      struct TokenResult result) {
   const char* end = string;
-  while (is_letter(*end)) end++;
+  while (is_letter(*end) or is_digit(*end)) end++;
 
   result.has_token = true;
   result.next_token_pos = end;

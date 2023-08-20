@@ -9,7 +9,7 @@ uniform vec2 camera_start;
 uniform vec2 pixel_offset;
 uniform vec2 window_size;
 
-#define MSAA 16
+#define MSAA 1
 #define GRID_BASE 4
 
 float render(vec2 pos, vec2 step);
@@ -70,11 +70,8 @@ void main() {
     out_color = value * vec4(0.8, 0.2, 0.1, 1.0) + (1.0 - value) * bgc;
 }
 
-#include_once "../cache/function.glsl"
+#include_once "cache/function.glsl"
 
-bool does_intersect(vec2 pos, vec2 step) {
-    return function(pos, step) >= 1.0;
-}
 
 bool does_intersect_grid(vec2 pos, vec2 step, vec2 scale) {
     vec2 a = mod(pos, scale * 2);
@@ -88,7 +85,7 @@ bool does_intersect_zero(vec2 pos, vec2 step) {
 }
 
 float render(vec2 pos, vec2 step) {
-    return does_intersect(pos, step) ? 1.0 : 0.0;
+    return clamp(function(pos, step), 0, 1);
 }
 
 float draw_msaa(vec2 pos) {

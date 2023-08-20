@@ -7,6 +7,7 @@
 typedef struct FuncConstCtx {
   ExprContext parent;
   vec_str_t* used_args;
+  bool are_const;
 } FuncConstCtx;
 
 ExprContext func_const_ctx_context(FuncConstCtx* this);

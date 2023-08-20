@@ -1,5 +1,7 @@
-
 #include "glsl_compiler.h"
+
+#include <math.h>
+#include <string.h>
 
 #include "../calculator/func_const_ctx.h"
 #include "../util/allocator.h"
@@ -17,17 +19,23 @@ StrResult glsl_compile_expression(ExprContext ctx, GlslContext* glsl,
                                   const Expr* expr,
                                   const vec_str_t* used_args) {
   assert_m(expr);
-  debugln("Compiling '%$expr'", *expr);
-  if (ctx.vtable->is_expr_const(ctx.data, expr)) {
+  // debugln("Compiling '%$expr'", *expr);
+  FuncConstCtx fctx = {
+      .parent = ctx,
+      .used_args = (vec_str_t*)used_args,
+      .are_const = false,
+  };
+  ExprContext local_ctx = func_const_ctx_context(&fctx);
+  if (local_ctx.vtable->is_expr_const(local_ctx.data, expr)) {
     // Calculate and insert as-is
-    ExprValueResult res = expr_calculate(expr, ctx);
+    ExprValueResult res = expr_calculate(expr, local_ctx);
     if (not res.is_ok) return StrErr(res.err_text);
     ExprValue value = res.ok;
 
     if (value.type != EXPR_VALUE_NUMBER) {
       return StrErr(non_const_types_err_msg(value, expr));
     } else {
-      str_t result = str_owned("%$expr_value", value);
+      str_t result = str_owned("%.10lf", value.number);
       expr_value_free(value);
       return StrOk(result);
     }
@@ -43,11 +51,11 @@ StrResult glsl_compile_expression(ExprContext ctx, GlslContext* glsl,
         case EXPR_NUMBER:
           return StrOk(str_owned("%lf", expr->number.value));
         case EXPR_VARIABLE:
-          return variable_to_glsl(ctx, glsl, expr, used_args);
+          return variable_to_glsl(local_ctx, glsl, expr, used_args);
         case EXPR_FUNCTION:
-          return function_to_glsl(ctx, glsl, expr, used_args);
+          return function_to_glsl(local_ctx, glsl, expr, used_args);
         case EXPR_BINARY_OP:
-          return operator_to_glsl(ctx, glsl, expr, used_args);
+          return operator_to_glsl(local_ctx, glsl, expr, used_args);
         default:
           panic("Invalid expr type");
       }
@@ -71,6 +79,7 @@ static StrResult variable_to_glsl(ExprContext ctx, GlslContext* glsl,
                                   const Expr* expr,
                                   const vec_str_t* used_args) {
   const char* var_name = expr->variable.name.string;
+  // debugln("Glsl var '%s'", var_name);
   StrSlice var_name_slice = str_slice_from_str_t(&expr->variable.name);
 
   StrResult result;
@@ -82,14 +91,23 @@ static StrResult variable_to_glsl(ExprContext ctx, GlslContext* glsl,
   if (contains) {
     result = StrOk(str_owned("arg_%s", var_name));
   } else if (ctx.vtable->is_variable(ctx.data, var_name_slice)) {
+    debugln("Is actually variable (vtable is %p)", ctx.vtable);
+    assert_m(ctx.vtable->get_variable_info);
+    debug_push();
+
+    debugln("Fn is %p", ctx.vtable->get_variable_info);
     ExprVariableInfo info =
         ctx.vtable->get_variable_info(ctx.data, var_name_slice);
 
+    debug_pop();
+    debugln("Got info");
     if (info.is_const) {
       // Calculate and insert value
+      debugln("Const");
       result = variable_to_glsl_calculate_const(var_name, info);
     } else if (info.expression) {
       // Turn into var_ function of x, y
+      debugln("Non const");
       result = variable_to_glsl_turn_to_fn(glsl, var_name, info);
     } else {
       panic("No available way to turn non-const variable into var_ function");
@@ -195,21 +213,17 @@ static StrResult function_to_glsl(ExprContext ctx, GlslContext* glsl,
   else
     str_free(result.data);
 
-  debugln("Compiling FUNCTION '%$expr'", *expr);
-  debug_push();
+  StrResult argument = glsl_compile_fn_args_values(
+      ctx, glsl, expr->function.argument, used_args);
 
-  StrResult argument =
-      glsl_compile_fn_args_values(ctx, glsl, expr->function.argument, used_args);
-
-  debug_pop();
   if (not argument.is_ok) {
     result = argument;
   } else {
     if (is_func_glsl_native(expr->function.name.string)) {
-      debugln("Function is native(%p '%s', %p '%s')", expr->function.name.string, expr->function.name.string, argument.data.string, argument.data.string);
-      result = StrOk(call_native_function(expr->function.name.string,
-                                          argument.data.string + 2)); // +2 to skip comma
-     } else {
+      result = StrOk(
+          call_native_function(expr->function.name.string,
+                               argument.data.string + 2));  // +2 to skip comma
+    } else {
       str_t shader_func_name = str_owned("func_%s", expr->function.name.string);
 
       if (not glsl_context_get_function(glsl, shader_func_name.string))
@@ -225,8 +239,6 @@ static StrResult function_to_glsl(ExprContext ctx, GlslContext* glsl,
     }
     str_free(argument.data);
   }
-
-  debugln("Done (%b): %s", result.is_ok, result.data.string);
 
   return result;
 }
@@ -353,7 +365,7 @@ static str_t call_native_function(const char* native_fn, const char* argument) {
   if (strcmp(native_fn, "ln") is 0)
     return str_owned("log(%s)/log(" E ")", argument);
   else if (strcmp(native_fn, "log") is 0)
-    return str_owned("log(%s)/log(10)", argument);
+    return str_owned("log(%s)/log(10.0)", argument);
   else
     return str_owned("%s(%s)", native_fn, argument);
 }
@@ -411,12 +423,14 @@ static str_t non_const_types_err_msg(ExprValue value, const Expr* expr) {
   }
 
 TemplateOperator(classic, "(%s %s %s)", left, name, right);
-TemplateOperator(powf, "pow(%s, %s)", left, right);
 TemplateOperator(comparsion, "((%s %s %s) ? 1.0 : 0.0)", left, name, right);
+TemplateOperator(mod, "mod(%s, %s)", left, right);
 
 static StrResult equality_operator(ExprContext this, GlslContext* glsl,
                                    const Expr* expr,
                                    const vec_str_t* used_args);
+static StrResult powf_operator(ExprContext ctx, GlslContext* glsl,
+                               const Expr* expr, const vec_str_t* used_args);
 
 static StrResult operator_to_glsl(ExprContext this, GlslContext* glsl,
                                   const Expr* expr,
@@ -435,9 +449,64 @@ static StrResult operator_to_glsl(ExprContext this, GlslContext* glsl,
     return comparsion_operator(this, glsl, expr, used_args);
   } else if (cmp(op_name, "==") or cmp(op_name, "!=") or cmp(op_name, "=")) {
     return equality_operator(this, glsl, expr, used_args);
+  } else if (cmp(op_name, "%") or cmp(op_name, "mod")) {
+    return mod_operator(this, glsl, expr, used_args);
   } else {
     return StrErr(
         str_owned("Operator '%s' cannot used in plot-expression", op_name));
+  }
+}
+
+static int get_int(const char* text);
+
+static StrResult powf_operator(ExprContext ctx, GlslContext* glsl,
+                               const Expr* expr, const vec_str_t* used_args) {
+  assert_m(expr->type is EXPR_BINARY_OP);
+
+  StrResult left_r =
+      glsl_compile_expression(ctx, glsl, expr->binary_operator.lhs, used_args);
+  if (not left_r.is_ok) return left_r;
+
+  StrResult right_r =
+      glsl_compile_expression(ctx, glsl, expr->binary_operator.rhs, used_args);
+  if (not right_r.is_ok) {
+    str_result_free(left_r);
+    return right_r;
+  }
+  const char* left = left_r.data.string;
+  const char* right = right_r.data.string;
+  str_t result;
+
+  int int_val = get_int(right);
+  if (int_val != INT_MAX and int_val >= -32 and int_val <= 32 and
+      strlen(left) < 16) {
+    StringStream stream = string_stream_create();
+    OutStream os = string_stream_stream(&stream);
+    x_sprintf(os, "(1.0");
+
+    for (int i = 1; i <= int_val; i++) x_sprintf(os, "*%s", left);
+
+    for (int i = -1; i >= int_val; i--) x_sprintf(os, "/%s", left);
+
+    x_sprintf(os, ")");
+    result = string_stream_to_str_t(stream);
+  } else
+    result = str_owned("pow(%s, %s)", left, right);
+
+  str_result_free(left_r);
+  str_result_free(right_r);
+  return StrOk(result);
+}
+
+static int get_int(const char* text) {
+  double num = 0.0;
+  int offset = 0;
+  int success = sscanf(text, "%lf%n", &num, &offset);
+
+  if (success and offset > 0 and num is round(num)) {
+    return (int)round(num);
+  } else {
+    return INT_MAX;
   }
 }
 
@@ -499,7 +568,7 @@ static StrResult equality_operator(ExprContext ctx, GlslContext* glsl,
   str_result_free(right_r);
   glsl_context_add_function(glsl, fn);
 
-  str_t args_text = glsl_args_to_string(used_args);
+  str_t args_text = glsl_args_vals_to_string(used_args);
   str_t expr_change_fn_name = glsl_context_get_unique_fn_name(glsl);
   GlslFunction fn2 = {.name = str_clone(&expr_change_fn_name),
                       .args = vec_str_t_clone(used_args),

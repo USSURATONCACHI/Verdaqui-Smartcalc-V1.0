@@ -30,6 +30,7 @@ CalcExprResult calc_expr_parse(ExprContext ctx, const char* text) {
       .is_function = ctx.vtable->is_function,
   };
   TokenTreeResult res = token_tree_parse(text, tt_ctx);
+  // debugln("Got token tree: %$token_tree", res.ok);
 
   if (not res.is_ok) return CalcExprErr(res.err.text_pos, res.err.text);
   return calc_expr_parse_tt(ctx, res.ok);
@@ -229,6 +230,7 @@ static CalcExprResult parse_function(ExprContext ctx,
   FuncConstCtx local_ctx = {
       .parent = ctx,
       .used_args = &args,
+      .are_const = true,
   };
 
   ExprResult expr_res =
@@ -255,8 +257,6 @@ static bool is_function_definition(ExprContext ctx, TokenTree* tree) {
   if (tree->is_token)
     return false;  // Single token is not enough to be a function definition
 
-  debugln("Checking '%$token_tree' to be a function def", *tree);
-
   vec_TokenTree* subtrees = &tree->tree.vec;
 
   bool is_function_pre =
@@ -266,14 +266,11 @@ static bool is_function_definition(ExprContext ctx, TokenTree* tree) {
 
   if (not is_function_pre) return false;
 
-  debugln("Pre check is ok");
-
   if (subtrees->data[1].is_token) {
-    debugln("arg is ident");
-    if (not is_unknown_ident(ctx, subtrees->data[1].token.data.ident_text))
-      return false;
+    // if (not is_unknown_ident(ctx, subtrees->data[1].token.data.ident_text))
+    // return false;
+    return false;
   } else {
-    debugln("arg is vec");
     vec_TokenTree* args = &subtrees->data[1].tree.vec;
     int tokens_in_a_row = 0;
     for (int i = 0; i < args->length; i++) {

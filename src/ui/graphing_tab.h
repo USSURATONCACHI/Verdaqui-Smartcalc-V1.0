@@ -5,36 +5,41 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include "../calculator/calc_backend.h"
 #include "../nuklear_flags.h"
 #include "../util/camera.h"
 #include "../util/mesh.h"
-
-typedef struct GraphingTab GraphingTab;
-
-typedef struct ui_expr {
-  struct nk_text_edit textedit;
-  struct nk_colorf color;
-
-  bool prev_active;
-  str_t descr_text;
-} ui_expr_t;
-ui_expr_t ui_expr_create(const char* text);
-void ui_expr_update(GraphingTab* gt, ui_expr_t* this);
-void ui_expr_free(ui_expr_t this);
-
-// vec_ui_expr
-typedef ui_expr_t ui_expr;
-#define VECTOR_H ui_expr
-#include "../util/vector.h"
+#include "framebuffer.h"
+#include "ui_expr.h"
 
 #define ICON_HOME 0
 #define ICON_CROSS 1
 #define ICON_PLUS 2
 #define ICONS_COUNT 3
 
-struct GraphingTab {
-  GLuint plot_shader;
+#define MULTISAMPLES 4
+
+#define GRAPHING_MAX_SHADERS 10000
+
+typedef struct NamedShader {
+  str_t name;
+  GLuint shader;
+} NamedShader;
+
+void named_shader_free(NamedShader ns);
+
+#define VECTOR_H NamedShader
+#include "../util/vector.h"
+
+
+typedef struct Plot {
+  GLuint shader_id;
+  int expr_id;
+} Plot;
+
+#define VECTOR_H Plot
+#include "../util/vector.h"
+
+typedef struct GraphingTab {
   Mesh square_mesh;
 
   double last_mouse_x, last_mouse_y;
@@ -42,13 +47,28 @@ struct GraphingTab {
   PlotCamera camera;
 
   vec_ui_expr expressions;
-  CalcBackend calc;
 
   struct nk_image icons[ICONS_COUNT];
-};
 
-GraphingTab* graphing_tab_create();
+  int prev_fb_width, prev_fb_height;
+
+  Framebuffer read_framebuffer;
+  Framebuffer write_framebuffer;
+  GLuint grid_shader;
+  GLuint post_proc_shader;
+  
+  str_t plot_exprs_base;
+  vec_NamedShader shaders_pool;
+  vec_Plot plots;
+} GraphingTab;
+
+GraphingTab* graphing_tab_create(int screen_w, int screen_h);
+GLuint load_shader(const char* frag_path, const char* vert_path);
+void graphing_tab_resize(GraphingTab* this, int screen_w, int screen_h);
+
 void graphing_tab_free(GraphingTab*);
+void graphing_tab_add_shader(GraphingTab*, str_t name, GLuint shader);
+GLuint graphing_tab_get_shader(GraphingTab*, const char* name);
 void graphing_tab_update(GraphingTab* this);
 void graphing_tab_update_calc(GraphingTab* this);
 void graphing_tab_draw(GraphingTab* this, struct nk_context* ctx,
@@ -59,4 +79,5 @@ void graphing_tab_on_mouse_move(GraphingTab* this, double x, double y);
 void graphing_tab_on_mouse_click(GraphingTab* this, int button, int action,
                                  int mods);
 
+void ui_expr_update(struct GraphingTab* gt, ui_expr_t* this);
 #endif  // SRC_CODE_UI_GRAPHING_TAB_H_

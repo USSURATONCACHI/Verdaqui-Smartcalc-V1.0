@@ -6,9 +6,9 @@
 
 str_t calc_backend_add_expr(CalcBackend* this, const char* text) {
   ExprContext ctx = calc_backend_get_context(this);
-  debugln("Trying to parse...");
+  // debugln("Trying to parse...");
   CalcExprResult res = calc_expr_parse(ctx, text);
-  debugln("Parsed : %d", res.is_ok);
+  // debugln("Parsed : %d", res.is_ok);
 
   str_t message = str_literal("");
   if (res.is_ok) {
@@ -16,8 +16,6 @@ str_t calc_backend_add_expr(CalcBackend* this, const char* text) {
     int type = res.ok.type;
     const char* type_text = calc_expr_type_text(type);
 
-    debugln("Type is %s, is const is: %b", calc_expr_type_text(type),
-            calc_backend_is_expr_const(this, &res.ok.expression));
     if ((type is CALC_EXPR_VARIABLE or type is CALC_EXPR_PLOT) and
         calc_backend_is_expr_const(this, &res.ok.expression)) {
       ExprContext ctx = calc_backend_get_context(this);

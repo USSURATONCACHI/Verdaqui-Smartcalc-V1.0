@@ -34,6 +34,7 @@ str_t str_raw_owned(char* text) {
 
 void str_free(str_t s) {
   if (s.is_owned and s.string is_not null) {
+    // debugln("Freeing str_t at %p (%s)", s.string, s.string);
     FREE((void*)s.string);
   }
 }

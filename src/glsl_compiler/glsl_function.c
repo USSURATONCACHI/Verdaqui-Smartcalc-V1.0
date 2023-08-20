@@ -39,3 +39,15 @@ str_t glsl_args_to_string(const vec_str_t* used_args) {
   glsl_print_args(used_args, os);
   return string_stream_to_str_t(stream);
 }
+
+void glsl_print_args_vals(const vec_str_t* used_args, OutStream out) {
+  for (int i = 0; i < used_args->length; i++)
+    x_sprintf(out, ", arg_%s", used_args->data[i].string);
+}
+
+str_t glsl_args_vals_to_string(const vec_str_t* used_args) {
+  StringStream stream = string_stream_create();
+  OutStream os = string_stream_stream(&stream);
+  glsl_print_args_vals(used_args, os);
+  return string_stream_to_str_t(stream);
+}

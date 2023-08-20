@@ -23,9 +23,11 @@ typedef struct App {
   GraphingTab* graphing;
   DepositTab* deposit;
   CreditTab* credit;
+
+  double last_mouse_x, last_mouse_y;
 } App;
 
-App* app_create();
+App* app_create(int screen_w, int screen_h);
 void app_free(App*);
 
 void app_render(App*, struct nk_context* ctx, GLFWwindow* window);

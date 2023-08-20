@@ -35,8 +35,6 @@ ExprResult expr_parse_string(const char* text, ExprContext ctx) {
 // =
 // =====
 ExprResult expr_parse_token_tree(TokenTree tree, ExprContext ctx) {
-  debugln("Parsing token tree '%$token_tree'", tree);
-  debug_push();
   vec_TokenTree tokens_vec;
 
   char bracket = '<';
@@ -50,9 +48,6 @@ ExprResult expr_parse_token_tree(TokenTree tree, ExprContext ctx) {
   }
 
   ExprResult res = expr_parse_tokens(tokens_vec, bracket, ctx);
-  debug_pop();
-  debugln("Done parsing token tree '%$token_tree': %s", tree,
-          res.is_ok ? "success" : "fail");
   return res;
 }
 
@@ -156,10 +151,10 @@ static ExprResult map_vec_to_expr(vec_Expr values, char bracket) {
 
   } else {
     result.ok = (Expr){.type = EXPR_VECTOR, .vector.arguments = values};
-    debugln(
+/*    debugln(
         "WARNING: Non [] vector of length %d. Bracket is '%c'. Expr is "
         "'%$expr'",
-        values.length, bracket, result.ok);
+        values.length, bracket, result.ok);*/
   }
   return result;
 }

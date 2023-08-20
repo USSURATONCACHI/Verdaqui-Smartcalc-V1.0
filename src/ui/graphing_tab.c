@@ -7,19 +7,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #include "../calculator/glsl_renderer.h"
 #include "../util/allocator.h"
 #include "../util/better_io.h"
 #include "../util/other.h"
 #include "../util/prettify_c.h"
 
-#include "../glsl_compiler/glsl_compiler.h"
+#define VECTOR_C NamedShader
+#define VECTOR_ITEM_DESTRUCTOR named_shader_free
+#include "../util/vector.h" // vec_NamedShader
 
-#define VECTOR_C ui_expr
-#define VECTOR_ITEM_DESTRUCTOR ui_expr_free
-#include "../util/vector.h"
-#undef VECTOR_MALLOC_FN
-#undef VECTOR_FREE_FN
+#define VECTOR_C Plot
+#include "../util/vector.h" // vec_Plot
 
 #define EDIT_FLAGS NK_EDIT_SIMPLE | NK_EDIT_SELECTABLE | NK_EDIT_CLIPBOARD
 
@@ -27,24 +25,32 @@
 #define ZOOM_SENSITIVITY 2.0
 
 #define SIDEBAR_WIDTH 500
+#define SSAA 2
+
+
+
+void named_shader_free(NamedShader ns) {
+  str_free(ns.name);
+  glDeleteProgram(ns.shader);
+}
+
 
 static Mesh create_square_mesh();
 
-static GLuint load_shader() {
-  const char* filepaths[] = {"assets/shaders/test_shader.frag",
-                             "assets/shaders/test_shader.vert"};
+GLuint load_shader(const char* frag_path, const char* vert_path) {
+  const char* filepaths[] = {frag_path, vert_path};
   const GLenum shader_types[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER};
   return sl_load_program(filepaths, shader_types, 2);
 }
 
-GraphingTab* graphing_tab_create() {
+static str_t read_file_to_str(const char* filename);
 
+GraphingTab* graphing_tab_create(int screen_w, int screen_h) {
   debugln("Creating graphing tab (%d)...", (int)sizeof(GraphingTab));
   GraphingTab* result = (GraphingTab*)MALLOC(sizeof(GraphingTab));
   assert_alloc(result);
 
   (*result) = (GraphingTab){
-      .plot_shader = load_shader(),
       .camera = PlotCamera_new(0.0, 0.0),
       .square_mesh = create_square_mesh(),
 
@@ -53,44 +59,118 @@ GraphingTab* graphing_tab_create() {
       .is_dragging = false,
 
       .expressions = vec_ui_expr_create(),
-      .calc = calc_backend_create(),
       .icons =
           {
               load_nk_icon("assets/img/home.png"),
               load_nk_icon("assets/img/close.png"),
               load_nk_icon("assets/img/plus.png"),
           },
+
+      .prev_fb_width = screen_w,
+      .prev_fb_height = screen_h,
+      .read_framebuffer = framebuffer_create(screen_w * SSAA, screen_h * SSAA, MULTISAMPLES),
+      .write_framebuffer = framebuffer_create(screen_w * SSAA, screen_h * SSAA, MULTISAMPLES),
+      .grid_shader = load_shader("assets/shaders/grid.frag", "assets/shaders/common.vert"),
+      .post_proc_shader = load_shader("assets/shaders/post_processing.frag", "assets/shaders/common.vert"),
+      .plots = vec_Plot_create(),
+      .plot_exprs_base = read_file_to_str("assets/shaders/function.frag"),
   };
-  // vec_ui_expr_push(&result->expressions,
-  //  ui_expr_create("sin(x * 2e) + 4 * e^(sin(4))"));
-  // vec_ui_expr_push(&result->expressions, ui_expr_create("sin(cos(y))"));
-  // vec_ui_expr_push(&result->expressions, ui_expr_create("a = 2x + 3"));
-  // vec_ui_expr_push(&result->expressions, ui_expr_create("b(a, b) = a^b + y"));
-  // vec_ui_expr_push(&result->expressions, ui_expr_create("a = b(2, 3)"));
+
+  FILE* exprs = fopen("assets/cache/exprs.txt", "r");
+  while (exprs and not feof(exprs)) {
+    char line[1024] = "";
+    char* suc = fgets(line, 1024, exprs);
+
+    if (not suc) break;
+    for (int i = 0; line[i] != '\0'; i++)
+      if (line[i] is '\n') line[i] = '\0';
+
+    debugln("Reading expression '%s'", line);
+    vec_ui_expr_push(&result->expressions, ui_expr_create(line));
+  }
+  if (exprs) fclose(exprs);
+
+  graphing_tab_update_calc(result);
   debugln("Done creating GraphingTab");
-  // vec_ui_expr_push(&result->expressions, ui_expr_create("f(b, c) = b[c]"));
-  // vec_ui_expr_push(
-  // &result->expressions,
-  // ui_expr_create("sin cos tan (x * y) = sin cos tan x + sin cos tan y"));
 
   return result;
 }
 
-void graphing_tab_free(GraphingTab* this) {
-  debugln("Graphing tab - deleting shader...");
-  glDeleteProgram(this->plot_shader);
-  debugln("Graphing tab - deleting mesh...");
-  mesh_delete(this->square_mesh);
-  debugln("Graphing tab - deleting ui expressions...");
-  vec_ui_expr_free(this->expressions);
-  debugln("Graphing tab - deleting calculator backend...");
-  calc_backend_free(this->calc);
+static str_t read_file_to_str(const char* filename) {
+  char * buffer = null;
+  long length;
+  FILE * f = fopen (filename, "rb");
 
-  debugln("Graphing tab - deleting icons...");
+  if (f) {
+    fseek (f, 0, SEEK_END);
+    length = ftell (f);
+    fseek (f, 0, SEEK_SET);
+    buffer = (char*)MALLOC((length + 1) * sizeof(char));
+    assert_alloc(buffer);
+    if (buffer)
+      fread (buffer, 1, length, f);
+
+    fclose (f);
+    buffer[length] = '\0';
+
+    for (long i = 0; buffer[i] != '\0'; i++)
+      if (buffer[i] is '\r')
+        buffer[i] = ' ';
+  }
+
+  return (str_t) {.is_owned = true, .string = buffer};
+}
+
+void graphing_tab_resize(GraphingTab* this, int screen_w, int screen_h) {
+  framebuffer_resize(&this->read_framebuffer, screen_w * SSAA, screen_h * SSAA, MULTISAMPLES);  
+  framebuffer_resize(&this->write_framebuffer, screen_w * SSAA, screen_h * SSAA, MULTISAMPLES);  
+}
+
+void graphing_tab_free(GraphingTab* this) {
+  debugln("Graphing tab - saving expressions");
+  FILE* exprs = fopen("assets/cache/exprs.txt", "w");
+  OutStream os = outstream_from_file(exprs);
+  for (int i = 0; i < this->expressions.length; i++) {
+    struct nk_str* str = &this->expressions.data[i].textedit.string;
+    const char* text = nk_str_get_const(str);
+    int len = nk_str_len(str);
+
+    outstream_put_slice(text, len, os);
+    outstream_puts("\n", os);
+  }
+  fclose(exprs);
+
+  debugln("Graphing tab - freeing...");
+  glDeleteProgram(this->grid_shader);
+  glDeleteProgram(this->post_proc_shader);
+  vec_NamedShader_free(this->shaders_pool);
+  vec_Plot_free(this->plots);
+
+  mesh_delete(this->square_mesh);
+  vec_ui_expr_free(this->expressions);
+  str_free(this->plot_exprs_base);
+
   for (int i = 0; i < ICONS_COUNT; i++) delete_nk_icon(this->icons[i]);
 
-  debugln("Graphing tab -  this");
   FREE(this);
+  debugln("Graphing tab - freeing done");
+}
+
+
+void graphing_tab_add_shader(GraphingTab*this, str_t name, GLuint shader) {
+  assert_m(graphing_tab_get_shader(this, name.string) is 0);
+  if (this->shaders_pool.length >= GRAPHING_MAX_SHADERS) {
+    debugln("Warning: shader pool overflow, deleting oldest shader");
+    vec_NamedShader_delete_fast(&this->shaders_pool, 0); // Delete the oldest shader
+  }
+  vec_NamedShader_push(&this->shaders_pool, (NamedShader) { .name = name, .shader = shader });
+}
+GLuint graphing_tab_get_shader(GraphingTab* this, const char* name) {
+  for (int i = 0; i < this->shaders_pool.length; i++) {
+    if (strcmp(name, this->shaders_pool.data[i].name.string) is 0)
+      return this->shaders_pool.data[i].shader;
+  }
+  return 0;
 }
 
 static void draw_plot(GraphingTab* this, GLFWwindow* window);
@@ -101,6 +181,8 @@ void graphing_tab_draw(GraphingTab* this, struct nk_context* ctx,
                        GLFWwindow* window) {
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
+  if (width != this->prev_fb_width or height != this->prev_fb_height or false)
+    graphing_tab_resize(this, width, height);
 
   draw_plot(this, window);
 
@@ -143,6 +225,7 @@ static void draw_exprs_ui(GraphingTab* this, struct nk_context* ctx) {
     nk_layout_row_push(ctx, 25);
     if (nk_button_image(ctx, this->icons[ICON_CROSS])) {
       vec_ui_expr_delete_order(&this->expressions, i--);
+      graphing_tab_update_calc(this);
       continue;
     }
 
@@ -181,8 +264,9 @@ static void draw_exprs_ui(GraphingTab* this, struct nk_context* ctx) {
   }
 
   nk_layout_row_static(ctx, 25, 25, 1);
-  if (nk_button_image(ctx, this->icons[ICON_PLUS])) {
-    vec_ui_expr_push(&this->expressions, ui_expr_create("y=x"));
+  if (this->expressions.length < (GRAPHING_MAX_SHADERS / 2) and nk_button_image(ctx, this->icons[ICON_PLUS])) {
+    vec_ui_expr_push(&this->expressions, ui_expr_create(""));
+    graphing_tab_update_calc(this);
   }
 }
 
@@ -190,7 +274,70 @@ static float get_zoom(PlotCamera* camera) {
   return pow(ZOOM_BASE, PlotCamera_zoom(camera));
 }
 
+static void bind_uniforms(GraphingTab* this, GLFWwindow* window, GLuint program);
+static void bind_framebuffers(GraphingTab* this, GLuint program);
+static void swap_framebuffers(GraphingTab* this);
+
+static void swap_bind_bind(GraphingTab* this, GLFWwindow* window, GLuint program);
+
 static void draw_plot(GraphingTab* this, GLFWwindow* window) {
+  int width, height;
+  glfwGetFramebufferSize(window, &width, &height);
+
+  mesh_bind(this->square_mesh);
+  glViewport(0, 0, width * SSAA, height * SSAA);
+  
+  // 1. Grid or background
+  swap_bind_bind(this, window, this->grid_shader);
+  mesh_draw(this->square_mesh);
+
+  // 2. All the plots
+  for (int i = 0; i < this->plots.length; i++) {
+    Plot plot = this->plots.data[i];
+    swap_bind_bind(this, window, plot.shader_id);
+    int loc = glGetUniformLocation(plot.shader_id, "u_color");
+
+    struct nk_colorf color = this->expressions.data[plot.expr_id].color;
+    glUniform4f(loc, color.r, color.g, color.b, color.a);
+    mesh_draw(this->square_mesh);
+  }
+
+  // 3. Post processing
+  swap_bind_bind(this, window, this->post_proc_shader);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0); // Draw to screen
+  glViewport(0, 0, width, height);
+  mesh_draw(this->square_mesh);
+
+  mesh_unbind();
+}
+static void swap_bind_bind(GraphingTab* this, GLFWwindow* window, GLuint program) {
+  swap_framebuffers(this);
+  bind_framebuffers(this, program);
+  bind_uniforms(this, window, program);
+  glUseProgram(program);
+}
+
+static void bind_framebuffers(GraphingTab* this, GLuint program) {
+  // debugln("Starting to bind framebuffers..."); debug_push();
+  // Bind write FB
+  glBindFramebuffer(GL_FRAMEBUFFER, this->write_framebuffer.framebuffer);
+
+  // Bind read FB as texture sampler
+  glActiveTexture(GL_TEXTURE0); 
+  glBindTexture(GL_TEXTURE_2D, this->read_framebuffer.color_texture);
+  
+  glUseProgram(program);
+  int loc = glGetUniformLocation(program, "u_read_texture");
+
+  glUniform1i(loc, 0); // GL_TEXTURE0 <- 0 is from here
+  // debugln("Framebuffers done."); debug_pop();
+}
+
+static void swap_framebuffers(GraphingTab* this) {
+  SWAP(Framebuffer, this->read_framebuffer, this->write_framebuffer);
+}
+
+static void bind_uniforms(GraphingTab* this, GLFWwindow* window, GLuint program) {
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
 
@@ -200,20 +347,16 @@ static void draw_plot(GraphingTab* this, GLFWwindow* window) {
 
   Vector2 offset = (Vector2){-(float)width / 2, -(float)height / 2};
 
-  glUseProgram(this->plot_shader);
-  int locStep = glGetUniformLocation(this->plot_shader, "camera_step");
-  int locStart = glGetUniformLocation(this->plot_shader, "camera_start");
-  int locOffset = glGetUniformLocation(this->plot_shader, "pixel_offset");
-  int locWinSize = glGetUniformLocation(this->plot_shader, "window_size");
+  glUseProgram(program);
+  int locStep = glGetUniformLocation(program, "u_camera_step");
+  int locStart = glGetUniformLocation(program, "u_camera_start");
+  int locOffset = glGetUniformLocation(program, "u_pixel_offset");
+  int locWinSize = glGetUniformLocation(program, "u_window_size");
 
   glUniform2f(locStep, step.x, step.y);
   glUniform2f(locStart, pos.x, pos.y);
   glUniform2f(locOffset, offset.x, offset.y);
   glUniform2f(locWinSize, width, height);
-
-  mesh_bind(this->square_mesh);
-  mesh_draw(this->square_mesh);
-  mesh_unbind();
 }
 
 static Mesh create_square_mesh() {
@@ -274,170 +417,7 @@ void graphing_tab_on_mouse_click(GraphingTab* this, int button, int action,
 
 // ====
 
-ui_expr_t ui_expr_create(const char* text) {
-  ui_expr_t this = {.color = {.r = 0.8, .g = 0.2, .b = 0.1, .a = 1.0},
-                    .prev_active = false,
-                    .descr_text = str_literal("Faz balls")};
-  nk_textedit_init_default(&this.textedit);
-  nk_str_insert_text_char(&this.textedit.string, 0, text, strlen(text));
-
-  this.color.r = 0.8f;
-  this.color.g = 0.2f;
-  this.color.b = 0.1f;
-  this.color.a = 1.0f;
-  return this;
-}
-
-void ui_expr_free(ui_expr_t this) {
-  debugln("UiExpr_free: Freeing textedit...");
-  nk_textedit_free(&this.textedit);
-  debugln("UiExpr_free: Freeing descr_text...");
-  str_free(this.descr_text);
-}
-
 void graphing_tab_update(GraphingTab* this) {
   for (int i = 0; i < this->expressions.length; i++)
     ui_expr_update(this, &this->expressions.data[i]);
-}
-
-bool is_function(void* ptr, StrSlice text) {
-  ptr = ptr;
-
-  const char* const functions[] = {"sin",  "cos",  "tan", "pow", "asin",
-                                   "acos", "atan", "log", "ln"};
-  const int functions_count = LEN(functions);
-
-  for (int i = 0; i < functions_count; i++)
-    if (text.length == (int)strlen(functions[i]) and
-        strncmp(functions[i], text.start, text.length) == 0)
-      return true;
-
-  return false;
-}
-
-void ui_expr_update(GraphingTab* gt, ui_expr_t* this) {
-  if (this->prev_active != this->textedit.active and
-      not this->textedit.active) {
-    debugc("\n");
-    debugln("Dump before...");
-    my_allocator_dump_short();
-    debugc("\n");
-
-    // for (int i = 0; i < 1000; i++)
-    graphing_tab_update_calc(gt);
-
-    debugc("\n");
-    debugln("Dump after...");
-    my_allocator_dump_short();
-  }
-
-  this->prev_active = this->textedit.active;
-}
-
-static str_t copy_from_nk_textedit(struct nk_text_edit* textedit) {
-  char* text = nk_str_get(&textedit->string);
-  int length = nk_str_len(&textedit->string);
-  return str_owned("%.*s", length, text);
-}
-/*
-static str_t message_apply_constness(CalcExpr* last_expr, CalcBackend* calc,
-                                     str_t message) {
-  bool is_const = is_calc_expr_const(last_expr, calc);
-  debugln("IS CONST? %s", is_const ? "true" : "false");
-
-  str_t result;
-  if (is_const) {
-    if (last_expr->type is CALC_EXPR_FUNCTION) {
-      result = str_owned("%s - const", message.string);
-    } else {
-      debugln("Calculating value of expression...");
-      ExprContext ctx = calc_backend_get_context(calc);
-      ExprValueResult val;
-      val = expr_calculate(&last_expr->expression, ctx);
-      debugln("Calculated!");
-
-      if (val.is_ok) {
-        StringStream builder = string_stream_create();
-        expr_value_print(&val.ok, string_stream_stream(&builder));
-        expr_value_free(val.ok);
-        result = string_stream_to_str_t(builder);
-      } else {
-        result = val.err_text;
-      }
-    }
-    str_free(message);
-  } else {
-    result = message;
-  }
-
-  return result;
-}*/
-
-void graphing_tab_update_calc(GraphingTab* this) {
-  calc_backend_free(this->calc);
-
-  this->calc = calc_backend_create();
-
-  GlslContext glsl = glsl_context_create();
-  int drawn_plots_count = 0;
-
-  for (int i = 0; i < this->expressions.length; i++) {
-    ui_expr* item = &this->expressions.data[i];
-
-    str_t buffer = copy_from_nk_textedit(&item->textedit);
-
-    debugln("Adding expr: %s", buffer.string);
-    debug_push();
-    str_t message = calc_backend_add_expr(&this->calc, buffer.string);
-    debug_pop();
-    debugln("Adding done (%s).", message.string);
-    str_free(buffer);
-    str_free(item->descr_text);
-    item->descr_text = message;
-
-    CalcExpr* last_expr = calc_backend_last_expr(&this->calc);
-
-    if (last_expr) {
-      debugln("Added CalcExpr '%$calc_expr' of type %s", &last_expr->expression,
-              calc_expr_type_text(last_expr->type));
-      
-
-      if (last_expr->type is CALC_EXPR_PLOT and drawn_plots_count is 0) {
-        drawn_plots_count++;
-        debugln("Gonna try to convert in into GLSL code...");
-        debug_push();
-
-        ExprContext ctx = calc_backend_get_context(&this->calc);
-        vec_str_t used_args = vec_str_t_create();
-        StrResult res = glsl_compile_expression(ctx, &glsl, &last_expr->expression, &used_args);
-        vec_str_t_free(used_args);
-
-        debug_pop();
-        debugln("Conversion done");
-
-        if (res.is_ok) {
-          debugln("Result - OK: %s", res.data.string);
-          glsl_context_print_all_functions(&glsl, DEBUG_OUT);
-
-          // Write to file
-          FILE* file = fopen("assets/shaders/cache/function.glsl", "w+");
-          assert_m(file);
-          OutStream os = outstream_from_file(file);
-          glsl_context_print_all_functions(&glsl, os);
-          x_sprintf(os, "\n\nfloat function(vec2 pos, vec2 step) {\nreturn %s;\n}\n", res.data.string);
-          fclose(file);
-
-          // Reload shader
-          glDeleteProgram(this->plot_shader);
-          this->plot_shader = load_shader();
-          assert_m(this->plot_shader);
-        } else {
-          debugln("Result - FAIL: %s", res.data.string);
-        }
-        str_free(res.data);
-      }
-    }
-  }
-
-  glsl_context_free(glsl);
 }

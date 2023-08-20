@@ -15,6 +15,7 @@ GlslFunction glsl_function_clone(const GlslFunction* this);
 void glsl_function_print(const GlslFunction* this, OutStream out);
 void glsl_print_args(const vec_str_t* used_args, OutStream out);
 str_t glsl_args_to_string(const vec_str_t* used_args);
+str_t glsl_args_vals_to_string(const vec_str_t* used_args);
 
 #define VECTOR_H GlslFunction
 #include "../util/vector.h"  // vec_GlslFunction

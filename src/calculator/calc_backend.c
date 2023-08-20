@@ -112,6 +112,7 @@ bool calc_backend_is_func_const_sslice(const CalcBackend* this, StrSlice name) {
     FuncConstCtx func_ctx = {
         .parent = ctx,
         .used_args = &expr->function.args,
+        .are_const = true,
     };
 
     ExprContext total_ctx = func_const_ctx_context(&func_ctx);
@@ -130,16 +131,17 @@ bool calc_backend_is_func_const_ptr(const CalcBackend* this, CalcExpr* expr) {
     FuncConstCtx func_ctx = {
         .parent = ctx,
         .used_args = &expr->function.args,
+        .are_const = true,
     };
 
     ExprContext total_ctx = func_const_ctx_context(&func_ctx);
 
-    debugln("Checking if function is const...");
-    debug_push();
+    // debugln("Checking if function is const...");
+    // debug_push();
     bool res =
         total_ctx.vtable->is_expr_const(total_ctx.data, &expr->expression);
-    debug_pop();
-    debugln("Checked: %b", res);
+    // debug_pop();
+    // debugln("Checked: %b", res);
 
     return res;
   } else {
@@ -220,7 +222,6 @@ CalcExpr* calc_backend_get_variable_sslice(CalcBackend* this, StrSlice name) {
         str_slice_eq_ccp(name, item->variable_name.string))
       return item;
   }
-
   if (this->parent)
     return calc_backend_get_variable_sslice(this->parent, name);
   else
@@ -379,15 +380,13 @@ ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name);
 ExprFunctionInfo cb_get_function_info(CalcBackend* this, StrSlice fun_name);
 
 static bool cb_is_variable(CalcBackend* this, StrSlice var_name) {
-  if (calculator_get_native_function(var_name))
-    return false;
+  if (calculator_get_native_function(var_name)) return false;
 
   return calc_backend_get_value_sslice(this, var_name) or
          calc_backend_get_variable_sslice(this, var_name);
 }
 static bool cb_is_function(CalcBackend* this, StrSlice fun_name) {
-  if (calculator_get_native_function(fun_name))
-    return true;
+  if (calculator_get_native_function(fun_name)) return true;
 
   return calc_backend_get_function_sslice(this, fun_name);
 }
@@ -428,7 +427,6 @@ static int cb_get_expr_type(CalcBackend* this, const Expr* expr) {
   return calc_backend_get_expr_type(this, expr);
 }
 
-
 ExprContext calc_backend_get_context(CalcBackend* this) {
   static const ExprContextVtable table = {
       .is_variable = (void*)cb_is_variable,
@@ -447,12 +445,15 @@ ExprContext calc_backend_get_context(CalcBackend* this) {
 }
 
 ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name) {
+  debugln("Smone asks for variable '%$slice' info", var_name);
   CalcExpr* expr = calc_backend_get_variable_sslice(this, var_name);
+  debugln("Got expr: %p", expr);
   CalcValue* val = calc_backend_get_value_sslice(this, var_name);
+  debugln("Got val: %p", val);
   ExprContext ctx = calc_backend_get_var_context_sslice(this, var_name);
+  debugln("Got ctx: data %p + vtable %p", ctx.data, ctx.vtable);
 
-  if (not expr and not val)
-    return cb_get_variable_info(this->parent, var_name);
+  if (not expr and not val) return cb_get_variable_info(this->parent, var_name);
 
   ExprVariableInfo result = {
       .expression = expr ? &expr->expression : null,
@@ -466,8 +467,20 @@ ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name) {
 ExprFunctionInfo cb_get_function_info(CalcBackend* this, StrSlice fun_name) {
   CalcExpr* expr = calc_backend_get_function_sslice(this, fun_name);
 
-  if (not expr)
-    return cb_get_function_info(this->parent, fun_name);
+  if (not expr) {
+    if (this->parent) {
+      return cb_get_function_info(this->parent, fun_name);
+    } else {
+      ExprFunctionInfo result = {
+          .is_const = false,
+          .correct_context = {.data = null, .vtable = null},
+          .value_type = VALUE_TYPE_UNKNOWN,
+          .expression = null,
+          .args_names = null,
+      };
+      return result;
+    }
+  }
 
   ExprFunctionInfo result = {
       .is_const = calc_backend_is_func_const_sslice(this, fun_name),

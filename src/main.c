@@ -48,7 +48,9 @@ int main() {
   initialize_all(&window, &ctx, &glfw);
 
   // ===== Program initialization
-  App* app = app_create();
+  int width, height;
+  glfwGetFramebufferSize(window, &width, &height);
+  App* app = app_create(width, height);
   scroll_callback_in(app, NULL, 0.0, 0.0);
   mouse_button_callback_in(app, NULL, 0, 0, 0);
   cursor_position_callback_in(app, NULL, 0.0, 0.0);

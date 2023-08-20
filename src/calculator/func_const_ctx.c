@@ -1,6 +1,7 @@
 #include "func_const_ctx.h"
 
 #include "../util/allocator.h"
+#include "native_functions.h"
 
 static bool fctx_has_value(const FuncConstCtx* this, StrSlice name);
 
@@ -88,15 +89,22 @@ static bool pure_fctx_is_expr_const(FuncConstCtx* this, const Expr* expr) {
     return true;
   } else if (expr->type is EXPR_VARIABLE) {
     if (fctx_has_value(this, str_slice_from_str_t(&expr->variable.name))) {
-      return true;
+      return this->are_const;
     } else {
       return this->parent.vtable->is_expr_const(this->parent.data, expr);
     }
   } else if (expr->type is EXPR_FUNCTION) {
     if (fctx_has_value(this, str_slice_from_str_t(&expr->function.name)))
       return false;
-    else
-      return pure_fctx_is_expr_const(this, expr->function.argument);
+    else {
+      StrSlice name = str_slice_from_str_t(&expr->function.name);
+      bool is_arg_const =
+          pure_fctx_is_expr_const(this, expr->function.argument);
+      if (calculator_get_native_function(name))
+        return is_arg_const;
+      else
+        return fctx_get_function_info(this, name).is_const and is_arg_const;
+    }
   } else if (expr->type is EXPR_VECTOR) {
     for (int i = 0; i < expr->vector.arguments.length; i++)
       if (not pure_fctx_is_expr_const(this, &expr->vector.arguments.data[i]))
@@ -117,16 +125,17 @@ static int fctx_get_expr_type(FuncConstCtx* this, const Expr* expr) {
 
 static ExprVariableInfo fctx_get_variable_info(FuncConstCtx* this,
                                                StrSlice var_name) {
+  debugln("fctx: someone asks for variable '%$slice'", var_name);
   if (fctx_has_value(this, var_name)) {
     return (ExprVariableInfo){
-        .is_const = false,
+        .is_const = this->are_const,
         .value_type = VALUE_TYPE_UNKNOWN,
         .value = null,
         .expression = null,  // We dont know arguments values at "compile"-time
         .correct_context = func_const_ctx_context(this),
     };
   } else {
-    return this->parent.vtable->get_variable_info(this, var_name);
+    return this->parent.vtable->get_variable_info(this->parent.data, var_name);
   }
 }
 static ExprFunctionInfo fctx_get_function_info(FuncConstCtx* this,
@@ -135,5 +144,6 @@ static ExprFunctionInfo fctx_get_function_info(FuncConstCtx* this,
     panic(
         "'%$slice' is not a function, but a parent function argument instead");
 
+  assert_m(this->parent.vtable->get_function_info);
   return this->parent.vtable->get_function_info(this->parent.data, fun_name);
 }
