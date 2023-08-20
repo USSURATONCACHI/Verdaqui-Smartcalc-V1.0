@@ -29,8 +29,8 @@ void main() {
  
 bool sign_changes(float a, float b) { 
     if ((a < 0 && b > 0) || (a > 0 && b < 0)) 
-        return abs(a - b) < 10; // This 10 is arbitrary. It should be a high as possible, while not allowing for artifacts 
- 
+        return abs(a - b) < (abs(a) + abs(b) + 10.0 + u_camera_step.x); 
+         
     return false; 
 } 
  
@@ -68,7 +68,7 @@ return ( res) ? 1.0 : 0.0;
 }
 
 float uniq_2_0(vec2 pos, vec2 step){
-return (pos.y) - ((((1.0*pos.x*pos.x) + (2.0000000000 * pos.x)) + 0.0000000000));
+return (pos.y) - (((1.0*pos.x*pos.x) + (pos.x - 1.0000000000)));
 }
 
 float uniq_3_0(vec2 pos, vec2 step){
@@ -91,7 +91,7 @@ return ( res) ? 1.0 : 0.0;
 }
 
 float uniq_4_0(vec2 pos, vec2 step){
-return (sin((pos.x + pos.y))) - ((pos.y - pos.x));
+return (sin((pos.x + pos.y))) - ((pos.x - pos.y));
 }
 
 float uniq_5_0(vec2 pos, vec2 step){
@@ -111,75 +111,6 @@ bool res =
 
     sign_changes(rb, rt);
 return ( res) ? 1.0 : 0.0;
-}
-
-float uniq_6_0(vec2 pos, vec2 step){
-return (pos.x) - (1.0000000000);
-}
-
-float uniq_7_0(vec2 pos, vec2 step){
-float 
-    lb = uniq_6_0(pos + vec2(0.0, step.y), step), 
-    rb = uniq_6_0(pos + step, step), 
-    lt = uniq_6_0(pos, step), 
-    rt = uniq_6_0(pos + vec2(step.x, 0.0), step);
-
-bool res =
-    sign_changes(lt, rt) ||
-    sign_changes(lt, rb) ||
-    sign_changes(lt, lb) ||
-
-    sign_changes(lb, rb) ||
-    sign_changes(lb, rt) ||
-
-    sign_changes(rb, rt);
-return ( res) ? 1.0 : 0.0;
-}
-
-float uniq_8_0(vec2 pos, vec2 step){
-return (pos.x) - (2.0000000000);
-}
-
-float uniq_9_0(vec2 pos, vec2 step){
-float 
-    lb = uniq_8_0(pos + vec2(0.0, step.y), step), 
-    rb = uniq_8_0(pos + step, step), 
-    lt = uniq_8_0(pos, step), 
-    rt = uniq_8_0(pos + vec2(step.x, 0.0), step);
-
-bool res =
-    sign_changes(lt, rt) ||
-    sign_changes(lt, rb) ||
-    sign_changes(lt, lb) ||
-
-    sign_changes(lb, rb) ||
-    sign_changes(lb, rt) ||
-
-    sign_changes(rb, rt);
-return ( res) ? 1.0 : 0.0;
-}
-
-float uniq_10_0(vec2 pos, vec2 step){
-return (pos.y) - ((uniq_7_0(pos, step) + uniq_9_0(pos, step)));
-}
-
-float uniq_11_0(vec2 pos, vec2 step){
-float 
-    lb = uniq_10_0(pos + vec2(0.0, step.y), step), 
-    rb = uniq_10_0(pos + step, step), 
-    lt = uniq_10_0(pos, step), 
-    rt = uniq_10_0(pos + vec2(step.x, 0.0), step);
-
-bool res =
-    sign_changes(lt, rt) ||
-    sign_changes(lt, rb) ||
-    sign_changes(lt, lb) ||
-
-    sign_changes(lb, rb) ||
-    sign_changes(lb, rt) ||
-
-    sign_changes(rb, rt);
-return ( res) ? 1.0 : 0.0;
 }float function(vec2 pos, vec2 step) {
- return uniq_11_0(pos, step);
+ return (1.0000000000 - ((1.0*pos.x*pos.x) + (1.0*pos.y*pos.y)));
 }

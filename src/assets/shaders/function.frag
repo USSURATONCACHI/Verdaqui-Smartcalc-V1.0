@@ -29,8 +29,8 @@ void main() {
 
 bool sign_changes(float a, float b) {
     if ((a < 0 && b > 0) || (a > 0 && b < 0))
-        return abs(a - b) < 10; // This 10 is arbitrary. It should be a high as possible, while not allowing for artifacts
-
+        return abs(a - b) < (abs(a) + abs(b) + 10.0 + u_camera_step.x);
+        
     return false;
 }
 
