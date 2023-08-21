@@ -61,48 +61,48 @@ void graphing_tab_update_calc(GraphingTab* this) {
       // debugln("Successfully CalcExpr '%$calc_expr' of type %s", &last_expr->expression, calc_expr_type_text(last_expr->type));
 
       if (last_expr->type is CALC_EXPR_PLOT) {
-        // debugln("Adding a plot");
-        // debugln("1. Compile to GLSL");
+        debugln("Adding a plot");
+        // debugln("0. Compile to glsl");
         
         ExprContext ctx = calc_backend_get_context(&calc);
         vec_str_t used_args = vec_str_t_create();
         StrResult code = glsl_compile_expression(ctx, &glsl, &last_expr->expression, &used_args);
         vec_str_t_free(used_args);
-
+        
         if (code.is_ok) {
-          // debugln("2. Save shader to file");
-          FILE* file = fopen("assets/shaders/cache/function.glsl", "w");
-          OutStream stream = outstream_from_file(file);
-          assert_m(file);
+          // debugln("1. Combine into full shader code");
+          StringStream string_stream = string_stream_create();
+          OutStream stream = string_stream_stream(&string_stream);
 
           outstream_puts(this->plot_exprs_base.string, stream);
-          outstream_puts("\n\n\n//CODE\n\n\n", stream);
+          outstream_puts("\n", stream);
           glsl_context_print_all_functions(&glsl, stream);
 
-          outstream_puts("float function(vec2 pos, vec2 step) {\n return ", stream);
+          outstream_puts("\n\nfloat function(vec2 pos, vec2 step) {\n return ", stream);
           outstream_puts(code.data.string, stream);
           outstream_puts(";\n}\n", stream);
 
           str_free(code.data);
-
-          fclose(file);
-
-          // debugln("3. Load and add the shader");
-          str_t expr_text = str_owned("%$expr", last_expr->expression);
-          GLuint shader = graphing_tab_get_shader(this, expr_text.string);
+          str_t shader_src = string_stream_to_str_t(string_stream);
+          
+          // debugln("2. Check if already exists");
+          GLuint shader = graphing_tab_get_shader(this, shader_src.string);
           if (shader) {
-            str_free(expr_text);
+            str_free(shader_src);
           } else {
-            shader = load_shader("assets/shaders/cache/function.glsl", "assets/shaders/common.vert");
-            debugln("Compiled shader for expr: '%s'", expr_text.string);
-            assert_m(shader);
-            graphing_tab_add_shader(this, expr_text, shader);
+            // debugln("3. Compile and add the shader");
+
+            Shader sh_compiled = shader_from_source(GL_FRAGMENT_SHADER, shader_src.string);
+            GlProgram pr_compiled = gl_program_from_2_shaders(&this->common_vert, &sh_compiled);
+            shader_free(sh_compiled);
+
+            debugln("Compiled shader for expr: '%$expr'", last_expr->expression);
+            graphing_tab_add_shader(this, shader_src, pr_compiled);
+            shader = pr_compiled.program;
           }
           vec_Plot_push(&this->plots, (Plot) {.expr_id = i, .shader_id = shader});
-          
-  //        debugln("DONE!");
         } else {
-//          debugln("Failed to compile cuz: %s", code.data.string);
+          debugln("Failed to compile to GLSL cuz: %s", code.data.string);
           str_free(item->descr_text);
           item->descr_text = code.data;
         }

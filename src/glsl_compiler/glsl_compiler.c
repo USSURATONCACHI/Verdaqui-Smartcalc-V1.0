@@ -35,7 +35,7 @@ StrResult glsl_compile_expression(ExprContext ctx, GlslContext* glsl,
     if (value.type != EXPR_VALUE_NUMBER) {
       return StrErr(non_const_types_err_msg(value, expr));
     } else {
-      str_t result = str_owned("%.10lf", value.number);
+      str_t result = isnan(value.number) ? str_literal("nan") : str_owned("%.10lf", value.number);
       expr_value_free(value);
       return StrOk(result);
     }
@@ -49,7 +49,7 @@ StrResult glsl_compile_expression(ExprContext ctx, GlslContext* glsl,
     } else {
       switch (expr->type) {
         case EXPR_NUMBER:
-          return StrOk(str_owned("%lf", expr->number.value));
+          return StrOk(isnan(expr->number.value) ? str_literal("nan") : str_owned("%lf", expr->number.value));
         case EXPR_VARIABLE:
           return variable_to_glsl(local_ctx, glsl, expr, used_args);
         case EXPR_FUNCTION:

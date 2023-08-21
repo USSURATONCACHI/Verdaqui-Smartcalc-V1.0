@@ -13,6 +13,8 @@ str_t str_clone(const str_t* source);
 void str_free(str_t s);
 void str_free_p(str_t* s);
 
+str_t read_file_to_str(const char* filename);
+
 typedef struct StrResult {
   bool is_ok;
   str_t data;

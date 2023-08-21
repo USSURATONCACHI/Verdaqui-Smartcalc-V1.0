@@ -64,6 +64,31 @@ str_t str_clone(const str_t* source) {
 
 void str_result_free(StrResult this) { str_free(this.data); }
 
+str_t read_file_to_str(const char* filename) {
+  char * buffer = null;
+  long length;
+  FILE * f = fopen (filename, "rb");
+
+  if (f) {
+    fseek (f, 0, SEEK_END);
+    length = ftell (f);
+    fseek (f, 0, SEEK_SET);
+    buffer = (char*)MALLOC((length + 1) * sizeof(char));
+    assert_alloc(buffer);
+    if (buffer)
+      fread (buffer, 1, length, f);
+
+    fclose (f);
+    buffer[length] = '\0';
+
+    for (long i = 0; buffer[i] != '\0'; i++)
+      if (buffer[i] is '\r')
+        buffer[i] = ' ';
+  }
+
+  return (str_t) {.is_owned = true, .string = buffer};
+}
+
 #include "vec_str_t.h"
 
 #define VECTOR_C str_t

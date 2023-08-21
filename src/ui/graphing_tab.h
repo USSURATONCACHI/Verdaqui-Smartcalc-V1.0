@@ -10,6 +10,7 @@
 #include "../util/mesh.h"
 #include "framebuffer.h"
 #include "ui_expr.h"
+#include "shader_loader.h"
 
 #define ICON_HOME 0
 #define ICON_CROSS 1
@@ -22,7 +23,7 @@
 
 typedef struct NamedShader {
   str_t name;
-  GLuint shader;
+  GlProgram shader;
 } NamedShader;
 
 void named_shader_free(NamedShader ns);
@@ -54,8 +55,10 @@ typedef struct GraphingTab {
 
   Framebuffer read_framebuffer;
   Framebuffer write_framebuffer;
-  GLuint grid_shader;
-  GLuint post_proc_shader;
+
+  Shader common_vert;
+  GlProgram grid_shader;
+  GlProgram post_proc_shader;
   
   str_t plot_exprs_base;
   vec_NamedShader shaders_pool;
@@ -67,7 +70,7 @@ GLuint load_shader(const char* frag_path, const char* vert_path);
 void graphing_tab_resize(GraphingTab* this, int screen_w, int screen_h);
 
 void graphing_tab_free(GraphingTab*);
-void graphing_tab_add_shader(GraphingTab*, str_t name, GLuint shader);
+void graphing_tab_add_shader(GraphingTab*, str_t name, GlProgram shader);
 GLuint graphing_tab_get_shader(GraphingTab*, const char* name);
 void graphing_tab_update(GraphingTab* this);
 void graphing_tab_update_calc(GraphingTab* this);

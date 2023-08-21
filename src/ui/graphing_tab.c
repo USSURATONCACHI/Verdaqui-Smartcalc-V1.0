@@ -31,7 +31,7 @@
 
 void named_shader_free(NamedShader ns) {
   str_free(ns.name);
-  glDeleteProgram(ns.shader);
+  gl_program_free(ns.shader);
 }
 
 
@@ -43,12 +43,12 @@ GLuint load_shader(const char* frag_path, const char* vert_path) {
   return sl_load_program(filepaths, shader_types, 2);
 }
 
-static str_t read_file_to_str(const char* filename);
-
 GraphingTab* graphing_tab_create(int screen_w, int screen_h) {
   debugln("Creating graphing tab (%d)...", (int)sizeof(GraphingTab));
   GraphingTab* result = (GraphingTab*)MALLOC(sizeof(GraphingTab));
   assert_alloc(result);
+
+  Shader common_vert = shader_from_file(GL_VERTEX_SHADER, "assets/shaders/common.vert");
 
   (*result) = (GraphingTab){
       .camera = PlotCamera_new(0.0, 0.0),
@@ -70,8 +70,10 @@ GraphingTab* graphing_tab_create(int screen_w, int screen_h) {
       .prev_fb_height = screen_h,
       .read_framebuffer = framebuffer_create(screen_w * SSAA, screen_h * SSAA, MULTISAMPLES),
       .write_framebuffer = framebuffer_create(screen_w * SSAA, screen_h * SSAA, MULTISAMPLES),
-      .grid_shader = load_shader("assets/shaders/grid.frag", "assets/shaders/common.vert"),
-      .post_proc_shader = load_shader("assets/shaders/post_processing.frag", "assets/shaders/common.vert"),
+
+      .common_vert = common_vert,
+      .grid_shader = gl_program_from_sh_and_f(&common_vert, GL_FRAGMENT_SHADER, "assets/shaders/grid.frag"),
+      .post_proc_shader = gl_program_from_sh_and_f(&common_vert, GL_FRAGMENT_SHADER, "assets/shaders/post_processing.frag"),
       .plots = vec_Plot_create(),
       .plot_exprs_base = read_file_to_str("assets/shaders/function.frag"),
   };
@@ -96,37 +98,13 @@ GraphingTab* graphing_tab_create(int screen_w, int screen_h) {
   return result;
 }
 
-static str_t read_file_to_str(const char* filename) {
-  char * buffer = null;
-  long length;
-  FILE * f = fopen (filename, "rb");
-
-  if (f) {
-    fseek (f, 0, SEEK_END);
-    length = ftell (f);
-    fseek (f, 0, SEEK_SET);
-    buffer = (char*)MALLOC((length + 1) * sizeof(char));
-    assert_alloc(buffer);
-    if (buffer)
-      fread (buffer, 1, length, f);
-
-    fclose (f);
-    buffer[length] = '\0';
-
-    for (long i = 0; buffer[i] != '\0'; i++)
-      if (buffer[i] is '\r')
-        buffer[i] = ' ';
-  }
-
-  return (str_t) {.is_owned = true, .string = buffer};
-}
-
 void graphing_tab_resize(GraphingTab* this, int screen_w, int screen_h) {
   framebuffer_resize(&this->read_framebuffer, screen_w * SSAA, screen_h * SSAA, MULTISAMPLES);  
   framebuffer_resize(&this->write_framebuffer, screen_w * SSAA, screen_h * SSAA, MULTISAMPLES);  
 }
 
 void graphing_tab_free(GraphingTab* this) {
+  // SAVE
   debugln("Graphing tab - saving expressions");
   FILE* exprs = fopen("assets/cache/exprs.txt", "w");
   OutStream os = outstream_from_file(exprs);
@@ -140,24 +118,30 @@ void graphing_tab_free(GraphingTab* this) {
   }
   fclose(exprs);
 
+  // FREE
   debugln("Graphing tab - freeing...");
-  glDeleteProgram(this->grid_shader);
-  glDeleteProgram(this->post_proc_shader);
-  vec_NamedShader_free(this->shaders_pool);
-  vec_Plot_free(this->plots);
-
   mesh_delete(this->square_mesh);
   vec_ui_expr_free(this->expressions);
-  str_free(this->plot_exprs_base);
 
   for (int i = 0; i < ICONS_COUNT; i++) delete_nk_icon(this->icons[i]);
+
+  framebuffer_free(this->read_framebuffer);
+  framebuffer_free(this->write_framebuffer);
+
+  shader_free(this->common_vert);
+  gl_program_free(this->grid_shader);
+  gl_program_free(this->post_proc_shader);
+
+  str_free(this->plot_exprs_base);
+  vec_NamedShader_free(this->shaders_pool);
+  vec_Plot_free(this->plots);
 
   FREE(this);
   debugln("Graphing tab - freeing done");
 }
 
 
-void graphing_tab_add_shader(GraphingTab*this, str_t name, GLuint shader) {
+void graphing_tab_add_shader(GraphingTab*this, str_t name, GlProgram shader) {
   assert_m(graphing_tab_get_shader(this, name.string) is 0);
   if (this->shaders_pool.length >= GRAPHING_MAX_SHADERS) {
     debugln("Warning: shader pool overflow, deleting oldest shader");
@@ -168,7 +152,7 @@ void graphing_tab_add_shader(GraphingTab*this, str_t name, GLuint shader) {
 GLuint graphing_tab_get_shader(GraphingTab* this, const char* name) {
   for (int i = 0; i < this->shaders_pool.length; i++) {
     if (strcmp(name, this->shaders_pool.data[i].name.string) is 0)
-      return this->shaders_pool.data[i].shader;
+      return this->shaders_pool.data[i].shader.program;
   }
   return 0;
 }
@@ -288,25 +272,25 @@ static void draw_plot(GraphingTab* this, GLFWwindow* window) {
   glViewport(0, 0, width * SSAA, height * SSAA);
   
   // 1. Grid or background
-  swap_bind_bind(this, window, this->grid_shader);
-  mesh_draw(this->square_mesh);
+  swap_bind_bind(this, window, this->grid_shader.program);  // Шейдер сетки
+  mesh_draw(this->square_mesh); // Рисуем на весь экран
 
   // 2. All the plots
   for (int i = 0; i < this->plots.length; i++) {
     Plot plot = this->plots.data[i];
-    swap_bind_bind(this, window, plot.shader_id);
+    swap_bind_bind(this, window, plot.shader_id);   // Шейдер графика
     int loc = glGetUniformLocation(plot.shader_id, "u_color");
 
     struct nk_colorf color = this->expressions.data[plot.expr_id].color;
-    glUniform4f(loc, color.r, color.g, color.b, color.a);
-    mesh_draw(this->square_mesh);
+    glUniform4f(loc, color.r, color.g, color.b, color.a); // Отправляем цвет в шейдер (в униформу u_color)
+    mesh_draw(this->square_mesh); //  Рисуем на весь экран
   }
 
   // 3. Post processing
-  swap_bind_bind(this, window, this->post_proc_shader);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0); // Draw to screen
+  swap_bind_bind(this, window, this->post_proc_shader.program); // Финальный шейдер
+  glBindFramebuffer(GL_FRAMEBUFFER, 0); // 0 = буффер окна, тоесть на экран
   glViewport(0, 0, width, height);
-  mesh_draw(this->square_mesh);
+  mesh_draw(this->square_mesh); // Рисуем на весь экран
 
   mesh_unbind();
 }

@@ -30,7 +30,7 @@ void main() {
 bool sign_changes(float a, float b) {
     if ((a < 0 && b > 0) || (a > 0 && b < 0))
         return abs(a - b) < (abs(a) + abs(b) + 10.0 + u_camera_step.x);
-        
+
     return false;
 }
 
@@ -38,4 +38,7 @@ float render(vec2 pos, vec2 step) {
     return clamp(function(pos - step, step * 2), 0, 1);
 }
 
+#define nan (0.0 / 0.0)
+#define NaN nan
+#define inf (1.0 / 0.0)
 // 'function' will be placed here (at the end of file)
