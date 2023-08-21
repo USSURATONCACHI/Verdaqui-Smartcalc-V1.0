@@ -150,15 +150,19 @@ static CalcExprResult parse_variable(ExprContext ctx, TokenTree tree) {
 
   // Right side
   ExprResult expr_res = expr_parse_token_tree(tree, ctx);
-  if (not expr_res.is_ok)
-    return CalcExprErr(expr_res.err_pos, expr_res.err_text);
-
-  CalcExpr to_add = {
-      .type = CALC_EXPR_VARIABLE,
-      .expression = expr_res.ok,
-      .variable_name = var_name,
-  };
-  return CalcExprOk(to_add);
+  CalcExprResult result;
+  if (expr_res.is_ok) {
+    CalcExpr to_add = {
+        .type = CALC_EXPR_VARIABLE,
+        .expression = expr_res.ok,
+        .variable_name = var_name,
+    };
+    result = CalcExprOk(to_add);
+  } else {
+    str_free(var_name);
+    result = CalcExprErr(expr_res.err_pos, expr_res.err_text);
+  }
+  return result;
 }
 
 static bool is_eq_tt(TokenTree* tree) {
