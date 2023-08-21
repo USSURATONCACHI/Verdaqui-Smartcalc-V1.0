@@ -9,7 +9,7 @@ CC=gcc -Wall -Wextra -std=c11 -g
 INCLUDES=-isystem ../include
 
 LIBS_SRC=
-LIBS=-lshader_loader -lglfw3
+LIBS=-lglfw3
 
 # ==== OS - dependent
 

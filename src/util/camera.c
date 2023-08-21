@@ -2,8 +2,24 @@
 
 #include <float.h>
 #include <math.h>
-#include <shader_loader.h>
 #include <time.h>
+#include <stdbool.h>
+
+#include "prettify_c.h"
+
+static double current_time_secs() {
+  static clock_t Start;
+  static bool IsInit = false;
+
+  clock_t now = clock();
+
+  if (not IsInit) {
+    Start = now;
+    IsInit = true;
+  }
+
+  return ((double) (now - Start)) / CLOCKS_PER_SEC;
+}
 
 #define current_time current_time_secs
 

@@ -6,8 +6,6 @@
 #include "full_nuklear.h"
 
 // Other
-#include <shader_loader.h>
-
 #include <nuklear_style.c>
 
 #include "app.h"
@@ -124,7 +122,6 @@ void initialize_all(GLFWwindow** out_window, struct nk_context** nk_ctx,
   glfwSetCharCallback(*out_window, nk_glfw3_char_callback);
   glfwSwapInterval(1);
 
-  sl_init_opengl((GLADloadproc)glfwGetProcAddress);
   printf("Passed OpenGL context to shader_loader rs lib\n");
 
   // ===== Nuklear initialization

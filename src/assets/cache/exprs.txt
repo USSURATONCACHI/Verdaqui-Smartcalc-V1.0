@@ -1,2 +1,2 @@
-1 / 0
 y = x^2
+sin tan cos (x y) = sin tan cos x + sin tan cos y

@@ -2,7 +2,6 @@
 
 #include <float.h>
 #include <math.h>
-#include <shader_loader.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,12 +35,6 @@ void named_shader_free(NamedShader ns) {
 
 
 static Mesh create_square_mesh();
-
-GLuint load_shader(const char* frag_path, const char* vert_path) {
-  const char* filepaths[] = {frag_path, vert_path};
-  const GLenum shader_types[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER};
-  return sl_load_program(filepaths, shader_types, 2);
-}
 
 GraphingTab* graphing_tab_create(int screen_w, int screen_h) {
   debugln("Creating graphing tab (%d)...", (int)sizeof(GraphingTab));
