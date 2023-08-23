@@ -2,8 +2,8 @@
 
 #include <float.h>
 #include <math.h>
-#include <time.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include "prettify_c.h"
 
@@ -18,7 +18,7 @@ static double current_time_secs() {
     IsInit = true;
   }
 
-  return ((double) (now - Start)) / CLOCKS_PER_SEC;
+  return ((double)(now - Start)) / CLOCKS_PER_SEC;
 }
 
 #define current_time current_time_secs
@@ -180,13 +180,15 @@ void PlotCamera_on_drag_start(PlotCamera* self) {
   self->vel_start_time = current_time();
 }
 
-#define Clamp(a, min, max)  (a) < (min) ? (min) : ((a) > (max) ? (max) : (a))
+#define Clamp(a, min, max) (a) < (min) ? (min) : ((a) > (max) ? (max) : (a))
 #define MaxDragTime 0.25
 
 void PlotCamera_on_drag_end(PlotCamera* self) {
   double now = current_time();
   self->pos = PlotCamera_pos(self);
-  double drag_coef = Clamp(MaxDragTime - (now - self->last_drag_time), 0.0, MaxDragTime) / MaxDragTime;
+  double drag_coef =
+      Clamp(MaxDragTime - (now - self->last_drag_time), 0.0, MaxDragTime) /
+      MaxDragTime;
   self->vel.x = self->next_vel.x * drag_coef;
   self->vel.y = self->next_vel.y * drag_coef;
   self->next_vel = (Vector2){0.0f, 0.0f};

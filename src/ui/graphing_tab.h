@@ -9,8 +9,8 @@
 #include "../util/camera.h"
 #include "../util/mesh.h"
 #include "framebuffer.h"
-#include "ui_expr.h"
 #include "shader_loader.h"
+#include "ui_expr.h"
 
 #define ICON_HOME 0
 #define ICON_CROSS 1
@@ -30,7 +30,6 @@ void named_shader_free(NamedShader ns);
 
 #define VECTOR_H NamedShader
 #include "../util/vector.h"
-
 
 typedef struct Plot {
   GLuint shader_id;
@@ -59,7 +58,7 @@ typedef struct GraphingTab {
   Shader common_vert;
   GlProgram grid_shader;
   GlProgram post_proc_shader;
-  
+
   str_t plot_exprs_base;
   vec_NamedShader shaders_pool;
   vec_Plot plots;

@@ -13,10 +13,10 @@
 
 #define VECTOR_C NamedShader
 #define VECTOR_ITEM_DESTRUCTOR named_shader_free
-#include "../util/vector.h" // vec_NamedShader
+#include "../util/vector.h"  // vec_NamedShader
 
 #define VECTOR_C Plot
-#include "../util/vector.h" // vec_Plot
+#include "../util/vector.h"  // vec_Plot
 
 #define EDIT_FLAGS NK_EDIT_SIMPLE | NK_EDIT_SELECTABLE | NK_EDIT_CLIPBOARD
 
@@ -26,13 +26,10 @@
 #define SIDEBAR_WIDTH 500
 #define SSAA 2
 
-
-
 void named_shader_free(NamedShader ns) {
   str_free(ns.name);
   gl_program_free(ns.shader);
 }
-
 
 static Mesh create_square_mesh();
 
@@ -41,7 +38,8 @@ GraphingTab* graphing_tab_create(int screen_w, int screen_h) {
   GraphingTab* result = (GraphingTab*)MALLOC(sizeof(GraphingTab));
   assert_alloc(result);
 
-  Shader common_vert = shader_from_file(GL_VERTEX_SHADER, "assets/shaders/common.vert");
+  Shader common_vert =
+      shader_from_file(GL_VERTEX_SHADER, "assets/shaders/common.vert");
 
   (*result) = (GraphingTab){
       .camera = PlotCamera_new(0.0, 0.0),
@@ -61,12 +59,17 @@ GraphingTab* graphing_tab_create(int screen_w, int screen_h) {
 
       .prev_fb_width = screen_w,
       .prev_fb_height = screen_h,
-      .read_framebuffer = framebuffer_create(screen_w * SSAA, screen_h * SSAA, MULTISAMPLES),
-      .write_framebuffer = framebuffer_create(screen_w * SSAA, screen_h * SSAA, MULTISAMPLES),
+      .read_framebuffer =
+          framebuffer_create(screen_w * SSAA, screen_h * SSAA, MULTISAMPLES),
+      .write_framebuffer =
+          framebuffer_create(screen_w * SSAA, screen_h * SSAA, MULTISAMPLES),
 
       .common_vert = common_vert,
-      .grid_shader = gl_program_from_sh_and_f(&common_vert, GL_FRAGMENT_SHADER, "assets/shaders/grid.frag"),
-      .post_proc_shader = gl_program_from_sh_and_f(&common_vert, GL_FRAGMENT_SHADER, "assets/shaders/post_processing.frag"),
+      .grid_shader = gl_program_from_sh_and_f(&common_vert, GL_FRAGMENT_SHADER,
+                                              "assets/shaders/grid.frag"),
+      .post_proc_shader =
+          gl_program_from_sh_and_f(&common_vert, GL_FRAGMENT_SHADER,
+                                   "assets/shaders/post_processing.frag"),
       .plots = vec_Plot_create(),
       .plot_exprs_base = read_file_to_str("assets/shaders/function.frag"),
   };
@@ -92,8 +95,10 @@ GraphingTab* graphing_tab_create(int screen_w, int screen_h) {
 }
 
 void graphing_tab_resize(GraphingTab* this, int screen_w, int screen_h) {
-  framebuffer_resize(&this->read_framebuffer, screen_w * SSAA, screen_h * SSAA, MULTISAMPLES);  
-  framebuffer_resize(&this->write_framebuffer, screen_w * SSAA, screen_h * SSAA, MULTISAMPLES);  
+  framebuffer_resize(&this->read_framebuffer, screen_w * SSAA, screen_h * SSAA,
+                     MULTISAMPLES);
+  framebuffer_resize(&this->write_framebuffer, screen_w * SSAA, screen_h * SSAA,
+                     MULTISAMPLES);
 }
 
 void graphing_tab_free(GraphingTab* this) {
@@ -133,14 +138,15 @@ void graphing_tab_free(GraphingTab* this) {
   debugln("Graphing tab - freeing done");
 }
 
-
-void graphing_tab_add_shader(GraphingTab*this, str_t name, GlProgram shader) {
+void graphing_tab_add_shader(GraphingTab* this, str_t name, GlProgram shader) {
   assert_m(graphing_tab_get_shader(this, name.string) is 0);
   if (this->shaders_pool.length >= GRAPHING_MAX_SHADERS) {
     debugln("Warning: shader pool overflow, deleting oldest shader");
-    vec_NamedShader_delete_fast(&this->shaders_pool, 0); // Delete the oldest shader
+    vec_NamedShader_delete_fast(&this->shaders_pool,
+                                0);  // Delete the oldest shader
   }
-  vec_NamedShader_push(&this->shaders_pool, (NamedShader) { .name = name, .shader = shader });
+  vec_NamedShader_push(&this->shaders_pool,
+                       (NamedShader){.name = name, .shader = shader});
 }
 GLuint graphing_tab_get_shader(GraphingTab* this, const char* name) {
   for (int i = 0; i < this->shaders_pool.length; i++) {
@@ -241,7 +247,8 @@ static void draw_exprs_ui(GraphingTab* this, struct nk_context* ctx) {
   }
 
   nk_layout_row_static(ctx, 25, 25, 1);
-  if (this->expressions.length < (GRAPHING_MAX_SHADERS / 2) and nk_button_image(ctx, this->icons[ICON_PLUS])) {
+  if (this->expressions.length < (GRAPHING_MAX_SHADERS / 2) and
+      nk_button_image(ctx, this->icons[ICON_PLUS])) {
     vec_ui_expr_push(&this->expressions, ui_expr_create(""));
     graphing_tab_update_calc(this);
   }
@@ -251,11 +258,13 @@ static float get_zoom(PlotCamera* camera) {
   return pow(ZOOM_BASE, PlotCamera_zoom(camera));
 }
 
-static void bind_uniforms(GraphingTab* this, GLFWwindow* window, GLuint program);
+static void bind_uniforms(GraphingTab* this, GLFWwindow* window,
+                          GLuint program);
 static void bind_framebuffers(GraphingTab* this, GLuint program);
 static void swap_framebuffers(GraphingTab* this);
 
-static void swap_bind_bind(GraphingTab* this, GLFWwindow* window, GLuint program);
+static void swap_bind_bind(GraphingTab* this, GLFWwindow* window,
+                           GLuint program);
 
 static void draw_plot(GraphingTab* this, GLFWwindow* window) {
   int width, height;
@@ -263,31 +272,34 @@ static void draw_plot(GraphingTab* this, GLFWwindow* window) {
 
   mesh_bind(this->square_mesh);
   glViewport(0, 0, width * SSAA, height * SSAA);
-  
+
   // 1. Grid or background
   swap_bind_bind(this, window, this->grid_shader.program);  // Шейдер сетки
-  mesh_draw(this->square_mesh); // Рисуем на весь экран
+  mesh_draw(this->square_mesh);  // Рисуем на весь экран
 
   // 2. All the plots
   for (int i = 0; i < this->plots.length; i++) {
     Plot plot = this->plots.data[i];
-    swap_bind_bind(this, window, plot.shader_id);   // Шейдер графика
+    swap_bind_bind(this, window, plot.shader_id);  // Шейдер графика
     int loc = glGetUniformLocation(plot.shader_id, "u_color");
 
     struct nk_colorf color = this->expressions.data[plot.expr_id].color;
-    glUniform4f(loc, color.r, color.g, color.b, color.a); // Отправляем цвет в шейдер (в униформу u_color)
-    mesh_draw(this->square_mesh); //  Рисуем на весь экран
+    glUniform4f(loc, color.r, color.g, color.b,
+                color.a);  // Отправляем цвет в шейдер (в униформу u_color)
+    mesh_draw(this->square_mesh);  //  Рисуем на весь экран
   }
 
   // 3. Post processing
-  swap_bind_bind(this, window, this->post_proc_shader.program); // Финальный шейдер
-  glBindFramebuffer(GL_FRAMEBUFFER, 0); // 0 = буффер окна, тоесть на экран
+  swap_bind_bind(this, window,
+                 this->post_proc_shader.program);  // Финальный шейдер
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);  // 0 = буффер окна, тоесть на экран
   glViewport(0, 0, width, height);
-  mesh_draw(this->square_mesh); // Рисуем на весь экран
+  mesh_draw(this->square_mesh);  // Рисуем на весь экран
 
   mesh_unbind();
 }
-static void swap_bind_bind(GraphingTab* this, GLFWwindow* window, GLuint program) {
+static void swap_bind_bind(GraphingTab* this, GLFWwindow* window,
+                           GLuint program) {
   swap_framebuffers(this);
   bind_framebuffers(this, program);
   bind_uniforms(this, window, program);
@@ -300,13 +312,13 @@ static void bind_framebuffers(GraphingTab* this, GLuint program) {
   glBindFramebuffer(GL_FRAMEBUFFER, this->write_framebuffer.framebuffer);
 
   // Bind read FB as texture sampler
-  glActiveTexture(GL_TEXTURE0); 
+  glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, this->read_framebuffer.color_texture);
-  
+
   glUseProgram(program);
   int loc = glGetUniformLocation(program, "u_read_texture");
 
-  glUniform1i(loc, 0); // GL_TEXTURE0 <- 0 is from here
+  glUniform1i(loc, 0);  // GL_TEXTURE0 <- 0 is from here
   // debugln("Framebuffers done."); debug_pop();
 }
 
@@ -314,7 +326,8 @@ static void swap_framebuffers(GraphingTab* this) {
   SWAP(Framebuffer, this->read_framebuffer, this->write_framebuffer);
 }
 
-static void bind_uniforms(GraphingTab* this, GLFWwindow* window, GLuint program) {
+static void bind_uniforms(GraphingTab* this, GLFWwindow* window,
+                          GLuint program) {
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
 

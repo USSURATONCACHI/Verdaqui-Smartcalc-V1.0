@@ -5,24 +5,25 @@
 
 #include "full_nuklear.h"
 #include "ui/graphing_tab.h"
+#include "ui/credit_tab.h"
+#include "ui/deposit_tab.h"
 
 #define TABS_NAMES \
-  { "Graphic calculator", "Deposit calculator", "Credit calculator" }
-#define TABS_COUNT 3
+  { "Graphic calculator", "Credit calculator", "Classic calculator", "Deposit calculator" }
+#define TABS_COUNT 4
 
 #define TAB_GRAPHING 0
-#define TAB_DEPOSIT 1
-#define TAB_CREDIT 2
+#define TAB_CREDIT 1
+#define TAB_CLASSIC 2
+#define TAB_DEPOSIT 3
 
-typedef struct DepositTab DepositTab;
-typedef struct CreditTab CreditTab;
 
 typedef struct App {
   int current_tab;
 
   GraphingTab* graphing;
-  DepositTab* deposit;
-  CreditTab* credit;
+  CreditTab credit;
+  DepositTab deposit;
 
   double last_mouse_x, last_mouse_y;
 } App;

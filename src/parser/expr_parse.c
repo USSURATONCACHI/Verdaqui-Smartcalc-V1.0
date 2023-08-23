@@ -151,10 +151,10 @@ static ExprResult map_vec_to_expr(vec_Expr values, char bracket) {
 
   } else {
     result.ok = (Expr){.type = EXPR_VECTOR, .vector.arguments = values};
-/*    debugln(
-        "WARNING: Non [] vector of length %d. Bracket is '%c'. Expr is "
-        "'%$expr'",
-        values.length, bracket, result.ok);*/
+    /*    debugln(
+            "WARNING: Non [] vector of length %d. Bracket is '%c'. Expr is "
+            "'%$expr'",
+            values.length, bracket, result.ok);*/
   }
   return result;
 }

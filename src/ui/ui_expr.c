@@ -14,9 +14,9 @@ ui_expr ui_expr_clone_panic(const ui_expr* this) {
 
 ui_expr_t ui_expr_create(const char* text) {
   ui_expr_t this = {
-    .color = {.r = 0.8, .g = 0.2, .b = 0.1, .a = 1.0},
-    .prev_active = false,
-    .descr_text = str_literal("Faz balls"),
+      .color = {.r = 0.8, .g = 0.2, .b = 0.1, .a = 1.0},
+      .prev_active = false,
+      .descr_text = str_literal("Faz balls"),
   };
 
   nk_textedit_init_default(&this.textedit);
@@ -29,7 +29,9 @@ ui_expr_t ui_expr_create(const char* text) {
   this.color.g = 0.2f;
   this.color.b = 0.1f;
   this.color.a = 1.0f;
-  // debugln("Created ui expr from '%s': descr (%d %p '%s') text '%.*s'", text, this.descr_text.is_owned, this.descr_text.string, this.descr_text.string, this.prev_length, this.prev_buffer);
+  // debugln("Created ui expr from '%s': descr (%d %p '%s') text '%.*s'", text,
+  // this.descr_text.is_owned, this.descr_text.string, this.descr_text.string,
+  // this.prev_length, this.prev_buffer);
   return this;
 }
 

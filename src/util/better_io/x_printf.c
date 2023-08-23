@@ -90,6 +90,10 @@ static const char* put_format(OutStream stream, const char* format,
     put_bool_fmt(stream, info, format, list, total_written);
   } else if (info.type is 'n') {
     put_n_fmt(stream, info, format, list, total_written);
+  } else if (info.type is '%') {
+    outstream_putc('%', stream);
+    (*total_written) += 1;
+    return format + 1;
   } else if (info.type is 0) {
     return format + 1;
   } else {
