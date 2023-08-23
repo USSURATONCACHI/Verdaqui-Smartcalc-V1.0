@@ -21,6 +21,7 @@ App* app_create(int screen_w, int screen_h) {
       .last_mouse_x = 0.0,
       .last_mouse_y = 0.0,
   };
+  debugln("App created");
   return result;
 }
 

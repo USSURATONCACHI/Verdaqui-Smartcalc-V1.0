@@ -32,6 +32,9 @@ typedef struct DepositTab {
 
   vec_Placement placements;
   vec_Placement withdrawals;
+
+  struct nk_image icon_plus;
+  struct nk_image icon_cross;
 } DepositTab;
 
 DepositTab deposit_tab_create();

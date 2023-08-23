@@ -140,6 +140,7 @@ static ExprResult parser_map_vecvec_to_vec(vec_vec_Expr total_exprs,
 }
 
 static ExprResult map_vec_to_expr(vec_Expr values, char bracket) {
+  unused(bracket);
   ExprResult result = {.is_ok = true};
   if (values.length is 0) {
     result = ExprErr(str_literal("Empty expressions are not allowed (2)"));
