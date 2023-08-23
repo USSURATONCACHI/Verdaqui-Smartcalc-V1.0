@@ -1,6 +1,6 @@
 #include "mesh.h"
 
-#include "prettify_c.h"
+#include "../util/prettify_c.h"
 
 Mesh mesh_create() {
   Mesh result;

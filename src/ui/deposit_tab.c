@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include "../util/better_string.h"
-#include "../util/other.h"
+#include "icon_load.h"
 
 #define VECTOR_C Placement
 #include "../util/vector.h"  // vec_Placement

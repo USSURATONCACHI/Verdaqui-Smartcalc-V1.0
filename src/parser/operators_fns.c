@@ -164,14 +164,13 @@ static ExprValueResult template_alg_operator(ExprValue* a, ExprValue* b,
     return res;                                                     \
   }
 
-AlgOperator(add, "added", a + b)
-AlgOperator(sub, "subtracted", a - b)
-AlgOperator(mul, "multiply", a* b)
-AlgOperator(div, "divide", a / b)
-AlgOperator(mod, "mod-ded", fmod(a, b))
-AlgOperator(pow, "exponentiated", pow(a, b))
+AlgOperator(add, "added", a + b) AlgOperator(sub, "subtracted", a - b)
+    AlgOperator(mul, "multiply", a* b) AlgOperator(div, "divide", a / b)
+        AlgOperator(mod, "mod-ded", fmod(a, b))
+            AlgOperator(pow, "exponentiated", pow(a, b))
 
-static long long check_num_integer(double number, ExprValueResult* res);
+                static long long check_num_integer(double number,
+                                                   ExprValueResult* res);
 
 ExprValueResult expr_operator_index(ExprValue a, ExprValue b) {
   ExprValueResult result = {.is_ok = true};
@@ -393,8 +392,6 @@ ExprValue expr_comparsion_template(ExprValue* a, ExprValue* b,
     return (ExprValueResult){.is_ok = true, .ok = result};               \
   }
 
-Comparsion(lte, a <= b)
-Comparsion(gte, a >= b)
-Comparsion(lt, a < b)
-Comparsion(gt, a > b)
+Comparsion(lte, a <= b) Comparsion(gte, a >= b) Comparsion(lt, a < b)
+    Comparsion(gt, a > b)
 #undef Number

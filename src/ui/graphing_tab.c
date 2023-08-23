@@ -8,8 +8,8 @@
 
 #include "../util/allocator.h"
 #include "../util/better_io.h"
-#include "../util/other.h"
 #include "../util/prettify_c.h"
+#include "icon_load.h"
 
 #define VECTOR_C NamedShader
 #define VECTOR_ITEM_DESTRUCTOR named_shader_free

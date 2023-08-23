@@ -111,6 +111,8 @@ LIBS_SRC+=-L${LIBRARIES_DIR}/lib
 
 BUILD_DIR=build
 TARGET_FILE=${BUILD_DIR}/smartcalc${EXEC_EXT}
+TEST_BIN=test_bin${EXEC_EXT}
+GCOV_BIN=gcov_bin${EXEC_EXT}
 
 # install, uninstall, clean, dvi, dist, test, gcov_report
 all: run
@@ -124,14 +126,20 @@ rebuild:
 	${RMRF} build
 	make build
 
+test: ${TEST_BIN}
+	./${TEST_BIN}
 
-
+gcov_report: ${GCOV_BIN}
+	./${GCOV_BIN}
+	lcov -t "test" -o test.info -c -d .
+	genhtml -o report test.info
 
 # Build
 SOURCES=$(wildcard */*.h) $(wildcard */*.c) $(wildcard */*/*.h) $(wildcard */*/*.c) $(wildcard */*/*/*.h) $(wildcard */*/*/*.c)
 C_SOURCES=$(filter %.c,$(SOURCES))
 H_SOURCES=$(filter %.h,$(SOURCES))
-OBJ_FILES=$(C_SOURCES:.c=.o)
+OBJ_FILES=$(C_SOURCES:.c=.reg.o)
+GCOV_OBJ_FILES=$(C_SOURCES:.c=.gcov.o)
 
 # Modules
 UTIL_OBJS=$(filter util/%,$(OBJ_FILES))
@@ -142,7 +150,7 @@ GLSL_COMPILER_OBJS=$(filter glsl_compiler/%,$(OBJ_FILES))
 
 OTHER_SOURCES=$(wildcard *.h) $(wildcard *.c)
 OTHER_C_SOURCES=$(filter %.c,$(OTHER_SOURCES))
-OTHER_OBJS=$(OTHER_C_SOURCES:.c=.o)
+OTHER_OBJS=$(OTHER_C_SOURCES:.c=.reg.o)
 
 util.a: ${UTIL_OBJS}
 	ar -rc util.a ${UTIL_OBJS}
@@ -169,18 +177,29 @@ ${TARGET_FILE}: ${OTHER_OBJS} ui.a glsl_compiler.a calculator.a parser.a util.a 
 	@echo
 	@echo ===== BUILDING EXECUTABLE =====
 	${MKDIR} ${BUILD_DIR}
-	${CP} ${LIBRARIES_DIR}/lib/*${DYLIB_EXT} ${BUILD_DIR}/
+	${CP} ${LIBRARIES_DIR}/lib/*${DYLIB_EXT}* ${BUILD_DIR}/
 	${CC} $^ ${LIBS_SRC} ${LIBS} -o ${TARGET_FILE}
 	@echo ===== BUILDING DONE =====
 	@echo
 ${BUILD_DIR}/assets: assets/*
 	${CP} assets ${BUILD_DIR}/
 
+TEST_OBJS=$(filter test/%,$(OBJ_FILES))
+${TEST_BIN}: ${TEST_OBJS} calculator.a parser.a util.a
+	ar -rc test.a ${TEST_OBJS}
+	ranlib test.a
+	${CC} test.a calculator.a parser.a util.a test.a calculator.a parser.a util.a -lcheck -lsubunit -lm -o ${TEST_BIN}
 
+GCOV_OBJS=$(filter util/%,$(GCOV_OBJ_FILES)) $(filter test/%,$(GCOV_OBJ_FILES)) $(filter parser/%,$(GCOV_OBJ_FILES)) $(filter calculator/%,$(GCOV_OBJ_FILES))
+${GCOV_BIN}: ${GCOV_OBJS}
+	${CC} -g -fprofile-arcs -ftest-coverage ${GCOV_OBJS}  -lcheck -lsubunit -lm -o ${GCOV_BIN}
 
 # This thing just builds any .o file
-%.o: %.c | ${H_SOURCES} ${LIBRARIES_DIR}/lib.cache
+%.reg.o: %.c | ${H_SOURCES} ${LIBRARIES_DIR}/lib.cache
 	${CC} -c -fPIC $< ${INCLUDES} -o $@
+	
+%.gcov.o: %.c | ${H_SOURCES} ${LIBRARIES_DIR}/lib.cache
+	${CC} -g -fprofile-arcs -ftest-coverage -c -fPIC $< ${INCLUDES} -o $@
 
 # This target unpacks libraries
 lib: ${LIBRARIES_DIR}/lib.cache
@@ -202,6 +221,9 @@ clean_lite: | ${RMRF_EXE}
 	${RMRF} *.o
 	${RMRF} */*.o
 	${RMRF} */*/*.o
+	${RMRF} *.gcov*
+	${RMRF} */*.gcov*
+	${RMRF} */*/*.gcov*
 	${RMRF} *.a
 	${RMRF} ${TARGET_FILE}
 
@@ -214,6 +236,8 @@ clean: clean_lite | ${RMRF_EXE}
 	${RMRF}	../libraries/win32_mingw-w64
 	${RMRF}	../libraries/win64_mingw-w64
 	${RMRF}	.clang-format
+	${RMRF}	test_bin
+	${RMRF}	report
 
 gitignore:
 	mv ../.gitignore ../.gitignore-original

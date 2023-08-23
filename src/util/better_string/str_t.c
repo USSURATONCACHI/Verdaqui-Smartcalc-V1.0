@@ -16,7 +16,10 @@ str_t str_owned(const char* format, ...) {
 
   StringStream builder = string_stream_create();
   OutStream os = string_stream_stream(&builder);
-  x_vprintf(os, format, list);
+
+  VaListWrap wrap;
+  va_copy(wrap.list, list);
+  x_vprintf(os, format, wrap);
   str_t result = string_stream_to_str_t(builder);
 
   va_end(list);

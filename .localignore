@@ -53,3 +53,10 @@ sane_windows/*/target/
 src/build
 libraries/*/*
 sane_windows/*.exe
+
+src/*.o
+src/*/*.o
+src/*/*/*.o
+src/smartcalc
+src/*.a
+*.gcov*

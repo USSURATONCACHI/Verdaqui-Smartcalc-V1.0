@@ -11,14 +11,19 @@
 void x_printf(const char* format, ...) {
   va_list list;
   va_start(list, format);
-  x_vprintf(outstream_stdout(), format, list);
+
+  VaListWrap wrap;
+  va_copy(wrap.list, list);
+  x_vprintf(outstream_stdout(), format, wrap);
   va_end(list);
 }
 
 void x_sprintf(OutStream stream, const char* format, ...) {
   va_list list;
   va_start(list, format);
-  x_vprintf(stream, format, list);
+  VaListWrap wrap;
+  va_copy(wrap.list, list);
+  x_vprintf(stream, format, wrap);
   va_end(list);
 }
 
@@ -29,9 +34,9 @@ static const char* next_item(const char* format) {
 }
 
 static const char* put_format(OutStream stream, const char* format,
-                              va_list* list, int* total_written);
+                              VaListWrap* list, int* total_written);
 
-void x_vprintf(OutStream stream, const char* format, va_list list) {
+void x_vprintf(OutStream stream, const char* format, VaListWrap list) {
   const char* next = format;
 
   int total_written = 0;
@@ -67,18 +72,19 @@ typedef struct Specificator {
 static Specificator parse_specificator(const char* str);
 
 static void put_string_fmt(OutStream stream, Specificator spec,
-                           const char* format, va_list* list,
+                           const char* format, VaListWrap* list,
                            int* total_written);
 static void put_n_fmt(OutStream stream, Specificator spec, const char* format,
-                      va_list* list, int* total_written);
+                      VaListWrap* list, int* total_written);
 static void put_bool_fmt(OutStream stream, Specificator spec,
-                         const char* format, va_list* list, int* total_written);
+                         const char* format, VaListWrap* list,
+                         int* total_written);
 
 #define BUFFER_SIZE 1024 * 64
 #define FORMAT_BUF_SIZE 2048
 #define MIN(a, b) ((a) < (b)) ? (a) : (b)
 static const char* put_format(OutStream stream, const char* format,
-                              va_list* list, int* total_written) {
+                              VaListWrap* list, int* total_written) {
   unused(stream);
   unused(format);
   unused(list);
@@ -102,22 +108,27 @@ static const char* put_format(OutStream stream, const char* format,
              (FORMAT_BUF_SIZE - 1)) char format_buf[BUFFER_SIZE] = {'\0'};
     strncpy(format_buf, format, info.symbols_count + 1);
 
-    vsprintf(buffer, format_buf, *list);
-
-    if (strcmp(info.length_mod, "l") is 0) {
-      va_arg(*list, long);
-    } else if (strcmp(info.length_mod, "ll") is 0) {
-      va_arg(*list, long long);
-    } else if (strcmp(info.length_mod, "j") is 0) {
-      va_arg(*list, intmax_t);
-    } else if (strcmp(info.length_mod, "z") is 0) {
-      va_arg(*list, size_t);
-    } else if (strcmp(info.length_mod, "t") is 0) {
-      va_arg(*list, ptrdiff_t);
-    } else if (strcmp(info.length_mod, "LL") is 0) {
-      va_arg(*list, __int64);
+    if (info.type is 'f') {
+      if (strcmp(info.length_mod, "l") is 0 or strcmp(info.length_mod, "") is 0)
+        sprintf(buffer, format_buf, va_arg(list->list, double));
+      else
+        panic("Unsupported format: %%%s%c", info.length_mod, info.type);
+    } else if (info.type is 'c') {
+      sprintf(buffer, format_buf, va_arg(list->list, int));
+    } else if (info.type is 'p') {
+      void* ptr = va_arg(list->list, void*);
+      sprintf(buffer, format_buf, ptr);
+    } else if (info.type is 'd' or info.type is 'i' or info.type is 'u') {
+      if (strcmp(info.length_mod, "l") is 0)
+        sprintf(buffer, format_buf, va_arg(list->list, long));
+      else if (strcmp(info.length_mod, "ll") is 0)
+        sprintf(buffer, format_buf, va_arg(list->list, long long));
+      else if (strcmp(info.length_mod, "") is 0) {
+        sprintf(buffer, format_buf, va_arg(list->list, int));
+      } else
+        panic("Unsupported format: %%%s%c", info.length_mod, info.type);
     } else {
-      va_arg(*list, int);
+      panic("Unsupported format (%s): '%s' '%c'", format, info.length_mod, info.type);
     }
 
     outstream_puts(buffer, stream);
@@ -128,56 +139,57 @@ static const char* put_format(OutStream stream, const char* format,
 }
 
 static void put_string_fmt(OutStream stream, Specificator info,
-                           const char* format, va_list* list,
+                           const char* format, VaListWrap* list,
                            int* total_written) {
   unused(format);
   if (info.precision > 0) {
-    char* string = va_arg(*list, char*);
+    char* string = va_arg(list->list, char*);
 
     outstream_put_slice(string, info.precision, stream);
     (*total_written) +=
         info.precision is 0 ? 0 : MIN((int)strlen(string), info.precision);
   } else if (info.precision is - 1) {
-    int len = va_arg(*list, int);
-    char* string = va_arg(*list, char*);
+    int len = va_arg(list->list, int);
+    char* string = va_arg(list->list, char*);
     outstream_put_slice(string, len, stream);
     (*total_written) += len is 0 ? 0 : MIN((int)strlen(string), len);
   } else {
-    char* string = va_arg(*list, char*);
+    char* string = va_arg(list->list, char*);
+    // printf("< for str got ptr %p >", string);
     outstream_puts(string, stream);
     (*total_written) += strlen(string);
   }
 }
 
 static void put_n_fmt(OutStream stream, Specificator info, const char* format,
-                      va_list* list, int* total_written) {
+                      VaListWrap* list, int* total_written) {
   debugln("x_printf WARNING: %n formatter is not fully supported.");
   unused(stream);
   unused(format);
   if (strcmp(info.length_mod, "l") is 0) {
-    (*(va_arg(*list, long*))) = (*total_written);
+    (*(va_arg(list->list, long*))) = (*total_written);
   } else if (strcmp(info.length_mod, "ll") is 0) {
-    (*(va_arg(*list, long long*))) = (*total_written);
+    (*(va_arg(list->list, long long*))) = (*total_written);
   } else if (strcmp(info.length_mod, "j") is 0) {
-    (*(va_arg(*list, intmax_t*))) = (*total_written);
+    (*(va_arg(list->list, intmax_t*))) = (*total_written);
   } else if (strcmp(info.length_mod, "z") is 0) {
-    (*(va_arg(*list, size_t*))) = (*total_written);
+    (*(va_arg(list->list, size_t*))) = (*total_written);
   } else if (strcmp(info.length_mod, "t") is 0) {
-    (*(va_arg(*list, ptrdiff_t*))) = (*total_written);
+    (*(va_arg(list->list, ptrdiff_t*))) = (*total_written);
   } else if (strcmp(info.length_mod, "LL") is 0) {
-    (*(va_arg(*list, int64_t*))) = (*total_written);
+    (*(va_arg(list->list, int64_t*))) = (*total_written);
   } else {
-    (*(va_arg(*list, int*))) = (*total_written);
+    (*(va_arg(list->list, int*))) = (*total_written);
   }
 }
 
 static void put_bool_fmt(OutStream stream, Specificator spec,
-                         const char* format, va_list* list,
+                         const char* format, VaListWrap* list,
                          int* total_written) {
   unused(spec);
   unused(format);
 
-  bool b = va_arg(*list, int);
+  bool b = va_arg(list->list, int);
   const char* to_put = b ? "true" : "false";
   outstream_puts(to_put, stream);
   (*total_written) += strlen(to_put);

@@ -44,8 +44,10 @@ ExprValueResult calc_calculate_expr(const char* text, double x, double y) {
       .is_variable = null,
       .is_function = null,
 
-      .get_variable_val = (ExprValueResult (*)(void*, StrSlice))xy_get_variable_val,
-      .call_function = (ExprValueResult (*)(void*,StrSlice,vec_ExprValue*))xy_call_function,
+      .get_variable_val =
+          (ExprValueResult(*)(void*, StrSlice))xy_get_variable_val,
+      .call_function =
+          (ExprValueResult(*)(void*, StrSlice, vec_ExprValue*))xy_call_function,
   };
 
   CalcBackend backend = calc_backend_create();

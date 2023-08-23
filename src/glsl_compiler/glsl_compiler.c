@@ -1,5 +1,6 @@
 #include "glsl_compiler.h"
 
+#include <limits.h>
 #include <math.h>
 #include <string.h>
 
@@ -426,12 +427,12 @@ static str_t non_const_types_err_msg(ExprValue value, const Expr* expr) {
   }
 
 TemplateOperator(classic, "(%s %s %s)", left, name, right)
-TemplateOperator(comparsion, "((%s %s %s) ? 1.0 : 0.0)", left, name, right)
-TemplateOperator(mod, "mod(%s, %s)", left, right)
+    TemplateOperator(comparsion, "((%s %s %s) ? 1.0 : 0.0)", left, name, right)
+        TemplateOperator(mod, "mod(%s, %s)", left, right)
 
-static StrResult equality_operator(ExprContext this, GlslContext* glsl,
-                                   const Expr* expr,
-                                   const vec_str_t* used_args);
+            static StrResult
+    equality_operator(ExprContext this, GlslContext* glsl, const Expr* expr,
+                      const vec_str_t* used_args);
 static StrResult powf_operator(ExprContext ctx, GlslContext* glsl,
                                const Expr* expr, const vec_str_t* used_args);
 

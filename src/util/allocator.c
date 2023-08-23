@@ -23,6 +23,7 @@ void my_allocator_free() {
 }
 
 void* my_malloc(size_t size) {
+  return malloc(size);
   MemRegion r = {
       .ptr = malloc(size),
       .size = size,
@@ -33,6 +34,7 @@ void* my_malloc(size_t size) {
 }
 
 void* my_realloc(void* mem, size_t size) {
+  return realloc(mem, size);
   if (mem) {
     for (int i = 0; i < regions.length; i++) {
       if (regions.data[i].ptr == mem) {
@@ -52,6 +54,7 @@ void* my_realloc(void* mem, size_t size) {
   }
 }
 void my_free(void* mem) {
+  return free(mem);
   if (not mem) return;
 
   for (int i = 0; i < regions.length; i++) {

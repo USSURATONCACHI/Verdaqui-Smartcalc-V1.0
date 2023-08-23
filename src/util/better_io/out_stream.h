@@ -1,6 +1,7 @@
 #ifndef SRC_UTIL_OUT_STREAM_H_
 #define SRC_UTIL_OUT_STREAM_H_
 
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 

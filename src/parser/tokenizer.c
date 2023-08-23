@@ -206,11 +206,18 @@ static double read_num_non_scientific(const char* string, int* offset) {
   while (string[len] != '\0' and (is_digit(string[len]) or string[len] is '.'))
     len++;
 
+  if (len is 1 and string[0] is '.') {
+    (*offset) = 1;
+    return 0.0;
+  }
+
   str_t part = str_owned("%.*s", len, string);
   double number = 42.0;
   int success = sscanf(part.string, "%lf", &number);
   (*offset) = len;
+
   str_free(part);
+
   assert_m(success and (*offset) > 0);
   return number;
 }

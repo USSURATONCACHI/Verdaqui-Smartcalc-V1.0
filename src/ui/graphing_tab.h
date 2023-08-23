@@ -7,7 +7,7 @@
 
 #include "../nuklear_flags.h"
 #include "../util/camera.h"
-#include "../util/mesh.h"
+#include "mesh.h"
 #include "framebuffer.h"
 #include "shader_loader.h"
 #include "ui_expr.h"
