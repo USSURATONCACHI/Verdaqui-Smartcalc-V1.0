@@ -2,7 +2,7 @@ MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 .SUFFIXES:
 
-# MSVC windows is not supported. If you are on windows, you have to have mingw installed in
+# MSVC windows may be not supported. If you are on windows, you may have to have mingw installed in
 # order to compile this.  
 CC=gcc -Wall -Wextra -std=c11
 
@@ -23,6 +23,10 @@ RENAME_FOLDER=mv
 DYLIB_EXT=.so
 EXEC_EXT=
 WARNS=
+
+RMRF_EXE=
+CP_EXE=
+MKDIR_EXE=
 
 # Determining target OS 
 ifeq ($(OS),Windows_NT)
@@ -119,6 +123,8 @@ build: ${TARGET_FILE}
 rebuild:
 	${RMRF} build
 	make build
+
+
 
 
 # Build
