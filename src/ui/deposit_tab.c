@@ -50,8 +50,10 @@ typedef struct DepositResult {
 static DepositResult calculate_deposit(DepositTab* this);
 static void draw_deposit_result(DepositTab* this, struct nk_context* ctx);
 
-static void draw_placements(char p_letter, struct nk_context* ctx, vec_Placement* placements, int max_dur, 
-  struct nk_image plus_icon, struct nk_image cross_icon);
+static void draw_placements(char p_letter, struct nk_context* ctx,
+                            vec_Placement* placements, int max_dur,
+                            struct nk_image plus_icon,
+                            struct nk_image cross_icon);
 
 void deposit_tab_draw(DepositTab* this, struct nk_context* ctx,
                       GLFWwindow* window) {
@@ -83,16 +85,23 @@ void deposit_tab_draw(DepositTab* this, struct nk_context* ctx,
 
   nk_layout_row_dynamic(ctx, 30, 1);
   nk_label(ctx, "Placements", NK_TEXT_ALIGN_LEFT);
-  draw_placements('P', ctx, &this->placements, this->duration * this->duration_type, this->icon_plus, this->icon_cross);
+  draw_placements('P', ctx, &this->placements,
+                  this->duration * this->duration_type, this->icon_plus,
+                  this->icon_cross);
 
   nk_layout_row_dynamic(ctx, 30, 1);
   nk_label(ctx, "Withdrawals", NK_TEXT_ALIGN_LEFT);
-  draw_placements('W', ctx, &this->withdrawals, this->duration * this->duration_type, this->icon_plus, this->icon_cross);
+  draw_placements('W', ctx, &this->withdrawals,
+                  this->duration * this->duration_type, this->icon_plus,
+                  this->icon_cross);
 
   draw_deposit_result(this, ctx);
 }
 
-static void draw_placements(char p_letter, struct nk_context* ctx, vec_Placement* placements, int max_dur, struct nk_image plus_icon, struct nk_image cross_icon) {
+static void draw_placements(char p_letter, struct nk_context* ctx,
+                            vec_Placement* placements, int max_dur,
+                            struct nk_image plus_icon,
+                            struct nk_image cross_icon) {
   for (int i = 0; i < placements->length; i++) {
     Placement* item = &placements->data[i];
     nk_layout_row_begin(ctx, NK_STATIC, 25, 3);
@@ -102,13 +111,14 @@ static void draw_placements(char p_letter, struct nk_context* ctx, vec_Placement
       vec_Placement_delete_order(placements, i--);
       continue;
     }
-    
+
     str_t amount_name = str_owned("Amount (%c%d)", p_letter, i + 1);
     str_t month_name = str_owned("Month (%c%d)", p_letter, i + 1);
 
     nk_layout_row_push(ctx, 300.0);
-    nk_property_int(ctx, month_name.string, 0, &item->month, max_dur - 1, 0, 1.0);
-    
+    nk_property_int(ctx, month_name.string, 0, &item->month, max_dur - 1, 0,
+                    1.0);
+
     nk_layout_row_push(ctx, 300.0);
     nk_property_double(ctx, amount_name.string, 0.0, &item->amount, 1.0e20, 0.0,
                        item->amount / 100.0 + 1.0);

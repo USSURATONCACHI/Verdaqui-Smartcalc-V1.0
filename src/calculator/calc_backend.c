@@ -10,16 +10,15 @@
 #define VECTOR_ITEM_CLONE calc_backend_clone
 #include "../util/vector.h"
 
-
 typedef struct XyValuesContext {
   double x;
   double y;
   ExprContext parent;
 } XyValuesContext;
 
-
 ExprValueResult xy_get_variable_val(XyValuesContext* this, StrSlice name);
-ExprValueResult xy_call_function(XyValuesContext* this, StrSlice name, vec_ExprValue* args);
+ExprValueResult xy_call_function(XyValuesContext* this, StrSlice name,
+                                 vec_ExprValue* args);
 /*
   // Parsing
   bool (*is_variable)(void* this, StrSlice var_name);
@@ -37,18 +36,16 @@ ExprValueResult xy_call_function(XyValuesContext* this, StrSlice name, vec_ExprV
   ExprFunctionInfo (*get_function_info)(void* this, StrSlice fun_name);
 */
 
-
-
 ExprValueResult calc_calculate_expr(const char* text, double x, double y) {
   static const ExprContextVtable XY_CTX_VTABLE = {
-    .get_expr_type = null,
-    .get_variable_info = null,
-    .get_function_info = null,
-    .is_variable = null,
-    .is_function = null,
-    
-    .get_variable_val = (void*)xy_get_variable_val,
-    .call_function = (void*)xy_call_function,
+      .get_expr_type = null,
+      .get_variable_info = null,
+      .get_function_info = null,
+      .is_variable = null,
+      .is_function = null,
+
+      .get_variable_val = (ExprValueResult (*)(void*, StrSlice))xy_get_variable_val,
+      .call_function = (ExprValueResult (*)(void*,StrSlice,vec_ExprValue*))xy_call_function,
   };
 
   CalcBackend backend = calc_backend_create();
@@ -59,8 +56,8 @@ ExprValueResult calc_calculate_expr(const char* text, double x, double y) {
   if (not expr.is_ok) {
     result = ExprValueErr(expr.err_pos, expr.err_text);
   } else {
-    XyValuesContext xy_ctx = { .x = x, .y = y, .parent = ctx };
-    ExprContext local_ctx = { .data = &xy_ctx, .vtable = &XY_CTX_VTABLE };
+    XyValuesContext xy_ctx = {.x = x, .y = y, .parent = ctx};
+    ExprContext local_ctx = {.data = &xy_ctx, .vtable = &XY_CTX_VTABLE};
 
     result = expr_calculate(&expr.ok, local_ctx);
     expr_free(expr.ok);
@@ -72,16 +69,17 @@ ExprValueResult calc_calculate_expr(const char* text, double x, double y) {
 
 ExprValueResult xy_get_variable_val(XyValuesContext* this, StrSlice name) {
   if (str_slice_eq_ccp(name, "x")) {
-    ExprValue val = { .type = EXPR_VALUE_NUMBER, .number = this->x };
+    ExprValue val = {.type = EXPR_VALUE_NUMBER, .number = this->x};
     return ExprValueOk(val);
   } else if (str_slice_eq_ccp(name, "y")) {
-    ExprValue val = { .type = EXPR_VALUE_NUMBER, .number = this->y };
+    ExprValue val = {.type = EXPR_VALUE_NUMBER, .number = this->y};
     return ExprValueOk(val);
-  }
-  else return this->parent.vtable->get_variable_val(this->parent.data, name);
+  } else
+    return this->parent.vtable->get_variable_val(this->parent.data, name);
 }
 
-ExprValueResult xy_call_function(XyValuesContext* this, StrSlice name, vec_ExprValue* args) {
+ExprValueResult xy_call_function(XyValuesContext* this, StrSlice name,
+                                 vec_ExprValue* args) {
   return this->parent.vtable->call_function(this->parent.data, name, args);
 }
 

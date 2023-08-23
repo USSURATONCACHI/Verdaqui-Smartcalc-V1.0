@@ -9,11 +9,11 @@
 #include "../util/better_string.h"
 
 typedef struct ClassicTab {
-    struct nk_text_edit expr_text;
-    double x;
-    double y;
+  struct nk_text_edit expr_text;
+  double x;
+  double y;
 
-    str_t last_err_message;
+  str_t last_err_message;
 } ClassicTab;
 
 ClassicTab classic_tab_create();

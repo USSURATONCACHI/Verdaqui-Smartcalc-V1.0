@@ -4,7 +4,7 @@ MAKEFLAGS += --no-builtin-variables
 
 # MSVC windows is not supported. If you are on windows, you have to have mingw installed in
 # order to compile this.  
-CC=gcc -Wall -Wextra -std=c11 -g
+CC=gcc -Wall -Wextra -std=c11
 
 INCLUDES=-isystem ../include
 

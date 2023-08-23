@@ -4,6 +4,7 @@
 #include "../util/prettify_c.h"
 
 Framebuffer framebuffer_create(int width, int height, int samples) {
+  unused(samples);
   GLuint fb;
   glGenFramebuffers(1, &fb);
   glBindFramebuffer(GL_FRAMEBUFFER, fb);
@@ -34,6 +35,7 @@ void framebuffer_free(Framebuffer f) {
 }
 
 void framebuffer_resize(Framebuffer* fb, int width, int height, int samples) {
+  unused(samples);
   glBindTexture(GL_TEXTURE_2D, fb->color_texture);
   // glTexImage2DMultisample(GL_TEXTURE_2D, samples, GL_RGBA, width, height,
   // GL_FALSE);

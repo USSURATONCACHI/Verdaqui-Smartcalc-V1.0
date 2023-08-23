@@ -425,9 +425,9 @@ static str_t non_const_types_err_msg(ExprValue value, const Expr* expr) {
     return StrOk(result);                                                 \
   }
 
-TemplateOperator(classic, "(%s %s %s)", left, name, right);
-TemplateOperator(comparsion, "((%s %s %s) ? 1.0 : 0.0)", left, name, right);
-TemplateOperator(mod, "mod(%s, %s)", left, right);
+TemplateOperator(classic, "(%s %s %s)", left, name, right)
+TemplateOperator(comparsion, "((%s %s %s) ? 1.0 : 0.0)", left, name, right)
+TemplateOperator(mod, "mod(%s, %s)", left, right)
 
 static StrResult equality_operator(ExprContext this, GlslContext* glsl,
                                    const Expr* expr,
