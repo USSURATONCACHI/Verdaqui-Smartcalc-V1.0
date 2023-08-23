@@ -238,6 +238,8 @@ clean: clean_lite | ${RMRF_EXE}
 	${RMRF}	.clang-format
 	${RMRF}	test_bin
 	${RMRF}	report
+	${RMRF}	gcov_bin
+	${RMRF}	test.info
 
 gitignore:
 	mv ../.gitignore ../.gitignore-original
