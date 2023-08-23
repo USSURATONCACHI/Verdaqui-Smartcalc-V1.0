@@ -7,6 +7,7 @@
 #include "ui/graphing_tab.h"
 #include "ui/credit_tab.h"
 #include "ui/deposit_tab.h"
+#include "ui/classic_tab.h"
 
 #define TABS_NAMES \
   { "Graphic calculator", "Credit calculator", "Classic calculator", "Deposit calculator" }
@@ -24,6 +25,7 @@ typedef struct App {
   GraphingTab* graphing;
   CreditTab credit;
   DepositTab deposit;
+  ClassicTab classic;
 
   double last_mouse_x, last_mouse_y;
 } App;

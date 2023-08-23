@@ -5,6 +5,8 @@
 #include "calc_expr.h"
 #include "calc_value.h"
 
+ExprValueResult calc_calculate_expr(const char* text, double x, double y);
+
 typedef struct CalcBackend {
   struct CalcBackend* parent;
   vec_CalcExpr expressions;

@@ -17,6 +17,7 @@ App* app_create(int screen_w, int screen_h) {
       .graphing = graphing_tab_create(screen_w, screen_h),
       .credit = credit_tab_create(),
       .deposit = deposit_tab_create(),
+      .classic = classic_tab_create(),
 
       .last_mouse_x = 0.0,
       .last_mouse_y = 0.0,
@@ -30,6 +31,7 @@ void app_free(App* app) {
   graphing_tab_free(app->graphing);
   credit_tab_free(app->credit);
   deposit_tab_free(app->deposit);
+  classic_tab_free(app->classic);
   free(app);
 }
 
@@ -54,13 +56,14 @@ void app_render(App* this, struct nk_context* ctx, GLFWwindow* window) {
       case TAB_GRAPHING:
         graphing_tab_draw(this->graphing, ctx, window);
         break;
-
       case TAB_CREDIT:
         credit_tab_draw(&this->credit, ctx, window);
         break;
-
       case TAB_DEPOSIT:
         deposit_tab_draw(&this->deposit, ctx, window);
+        break;
+      case TAB_CLASSIC:
+        classic_tab_draw(&this->classic, ctx, window);
         break;
     }
   }
@@ -79,6 +82,9 @@ void app_on_scroll(App* this, double x, double y) {
     case TAB_DEPOSIT:
       deposit_tab_on_scroll(&this->deposit, x, y);
       break;
+    case TAB_CLASSIC:
+      classic_tab_on_scroll(&this->classic, x, y);
+      break;
   }
 }
 
@@ -95,6 +101,9 @@ void app_on_mouse_move(App* this, double pos_x, double pos_y) {
     case TAB_DEPOSIT:
       deposit_tab_on_mouse_move(&this->deposit, pos_x, pos_y);
       break;
+    case TAB_CLASSIC:
+      classic_tab_on_mouse_move(&this->classic, pos_x, pos_y);
+      break;
   }
 }
 
@@ -109,6 +118,9 @@ void app_on_mouse_click(App* this, int button, int action, int mods) {
     case TAB_DEPOSIT:
       deposit_tab_on_mouse_click(&this->deposit, button, action, mods);
       break;
+    case TAB_CLASSIC:
+      classic_tab_on_mouse_click(&this->classic, button, action, mods);
+      break;
   }
 }
 
@@ -122,6 +134,9 @@ void app_update(App* this) {
       break;
     case TAB_DEPOSIT:
       deposit_tab_update(&this->deposit);
+      break;
+    case TAB_CLASSIC:
+      classic_tab_update(&this->classic);
       break;
   }
 }
