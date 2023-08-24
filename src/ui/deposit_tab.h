@@ -5,18 +5,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include "../calculator/credit_deposit.h"
 #include "../nuklear_flags.h"
-
-#define DEPOSIT_DUR_MONTHS 1
-#define DEPOSIT_DUR_YEARS 12
-
-typedef struct Placement {
-  int month;
-  double amount;
-} Placement;
-
-#define VECTOR_H Placement
-#include "../util/vector.h"  // vec_Placement
 
 typedef struct DepositTab {
   double amount;

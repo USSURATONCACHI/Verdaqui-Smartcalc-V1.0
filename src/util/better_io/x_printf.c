@@ -128,7 +128,8 @@ static const char* put_format(OutStream stream, const char* format,
       } else
         panic("Unsupported format: %%%s%c", info.length_mod, info.type);
     } else {
-      panic("Unsupported format (%s): '%s' '%c'", format, info.length_mod, info.type);
+      panic("Unsupported format (%s): '%s' '%c'", format, info.length_mod,
+            info.type);
     }
 
     outstream_puts(buffer, stream);

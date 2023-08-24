@@ -5,9 +5,6 @@
 #include "../util/better_string.h"
 #include "icon_load.h"
 
-#define VECTOR_C Placement
-#include "../util/vector.h"  // vec_Placement
-
 DepositTab deposit_tab_create() {
   DepositTab result = {
       .amount = 1000.0,
@@ -40,14 +37,6 @@ static void deposit_nk_option(int* value, struct nk_context* ctx,
   if (nk_option_text(ctx, name, strlen(name), (*value)is type)) (*value) = type;
 }
 
-typedef struct DepositResult {
-  double deposit_amount;
-  double accured_interest;
-  double tax_sum;
-  double total_amount;
-} DepositResult;
-
-static DepositResult calculate_deposit(DepositTab* this);
 static void draw_deposit_result(DepositTab* this, struct nk_context* ctx);
 
 static void draw_placements(char p_letter, struct nk_context* ctx,
@@ -135,7 +124,16 @@ static void draw_placements(char p_letter, struct nk_context* ctx,
 }
 
 static void draw_deposit_result(DepositTab* this, struct nk_context* ctx) {
-  DepositResult res = calculate_deposit(this);
+  DepositResult res = calculate_deposit((DepositInfo){
+      .amount = this->amount,
+      .capitalization = this->capitalization,
+      .capitalization_period = this->capit_period,
+      .duration_months = this->duration * this->duration_type,
+      .interest_rate = this->interest_rate,
+      .placements = &this->placements,
+      .tax_rate = this->tax_rate,
+      .withdrawals = &this->withdrawals,
+  });
 
   str_t tax_sum = str_owned("Tax sum: %.2lf", res.tax_sum);
   str_t deposited_amount =
@@ -154,47 +152,6 @@ static void draw_deposit_result(DepositTab* this, struct nk_context* ctx) {
   str_free(deposited_amount);
   str_free(total_amount);
   str_free(accured_interest);
-}
-
-static DepositResult calculate_deposit(DepositTab* this) {
-  int dur_monthly = this->duration * this->duration_type;
-  double rate = this->interest_rate / 100.0;
-  double deposit = this->amount;
-  double payment = 0.0;
-  double tax_sum = 0.0;
-
-  double tax_coef = 1.0 - this->tax_rate / 100.0;
-
-  for (int i = 0; i < dur_monthly; i++) {
-    double cur_payment = deposit * rate;
-    payment += cur_payment * tax_coef;
-    tax_sum += cur_payment * this->tax_rate / 100.0;
-
-    bool capitalization_end =
-        ((i + 1) % this->capit_period) is 0 or (i + 1) is dur_monthly;
-    if (this->capitalization and capitalization_end) {
-      deposit += payment;
-      payment = 0.0;
-    }
-
-    for (int j = 0; j < this->placements.length; j++)
-      if (this->placements.data[j].month is i)
-        deposit += this->placements.data[j].amount;
-
-    for (int j = 0; j < this->withdrawals.length; j++)
-      if (this->withdrawals.data[j].month is i)
-        deposit -= this->withdrawals.data[j].amount;
-  }
-
-  double total_amount = deposit + payment * tax_coef;
-  double accured_interest = (total_amount / this->amount - 1.0) / dur_monthly;
-
-  return (DepositResult){
-      .tax_sum = tax_sum,
-      .accured_interest = accured_interest,
-      .deposit_amount = deposit,
-      .total_amount = total_amount,
-  };
 }
 
 void deposit_tab_update(DepositTab* this) { unused(this); }

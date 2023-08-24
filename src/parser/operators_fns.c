@@ -240,7 +240,6 @@ static ExprValueResult expr_op_range_template(ExprValue a, ExprValue b,
         long long high = check_num_integer(b.number, &result);
         if (result.is_ok) {
           long long len = high > low ? high - low : 0;
-          debugln("Len: %lld", len);
           vec_ExprValue vec = vec_ExprValue_with_capacity(len);
 
           for (long long i = low; inclusive ? i <= high : i < high; i++)
@@ -269,7 +268,6 @@ static ExprValueResult expr_op_range_template(ExprValue a, ExprValue b,
 #undef Err
 
 ExprValueResult expr_operator_range(ExprValue a, ExprValue b) {
-  debugln("Starting to range");
   return expr_op_range_template(a, b, false);
 }
 ExprValueResult expr_operator_range_included(ExprValue a, ExprValue b) {

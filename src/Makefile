@@ -190,9 +190,9 @@ ${TEST_BIN}: ${TEST_OBJS} calculator.a parser.a util.a
 	ranlib test.a
 	${CC} test.a calculator.a parser.a util.a test.a calculator.a parser.a util.a -lcheck -lsubunit -lm -o ${TEST_BIN}
 
-GCOV_OBJS=$(filter util/%,$(GCOV_OBJ_FILES)) $(filter test/%,$(GCOV_OBJ_FILES)) $(filter parser/%,$(GCOV_OBJ_FILES)) $(filter calculator/%,$(GCOV_OBJ_FILES))
-${GCOV_BIN}: ${GCOV_OBJS}
-	${CC} -g -fprofile-arcs -ftest-coverage ${GCOV_OBJS}  -lcheck -lsubunit -lm -o ${GCOV_BIN}
+GCOV_OBJS=$(filter test/%,$(GCOV_OBJ_FILES)) $(filter parser/%,$(GCOV_OBJ_FILES)) $(filter calculator/%,$(GCOV_OBJ_FILES))
+${GCOV_BIN}: ${GCOV_OBJS} util.a glsl_compiler.a
+	${CC} -g -fprofile-arcs -ftest-coverage ${GCOV_OBJS} util.a glsl_compiler.a  -lcheck -lsubunit -lm -o ${GCOV_BIN}
 
 # This thing just builds any .o file
 %.reg.o: %.c | ${H_SOURCES} ${LIBRARIES_DIR}/lib.cache

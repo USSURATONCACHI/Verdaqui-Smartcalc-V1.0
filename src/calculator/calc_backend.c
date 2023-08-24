@@ -528,7 +528,24 @@ ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name) {
   ExprContext ctx = calc_backend_get_var_context_sslice(this, var_name);
   debugln("Got ctx: data %p + vtable %p", ctx.data, ctx.vtable);
 
-  if (not expr and not val) return cb_get_variable_info(this->parent, var_name);
+  if (not expr and not val) {
+    if (this->parent) {
+      return cb_get_variable_info(this->parent, var_name);
+    } else {
+      debugln("Not found parent, so it is null");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-braces"
+      ExprVariableInfo res = {
+        .is_const = false,
+        .value = null,
+        .value_type = VALUE_TYPE_UNKNOWN,
+        .expression = null,
+        .correct_context = null,
+      };
+#pragma GCC diagnostic pop
+      return res;
+    }
+  }
 
   ExprVariableInfo result = {
       .expression = expr ? &expr->expression : null,

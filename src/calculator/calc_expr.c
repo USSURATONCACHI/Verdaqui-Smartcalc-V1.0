@@ -37,10 +37,10 @@ CalcExpr calc_expr_clone(const CalcExpr* source) {
   if (source->type is CALC_EXPR_VARIABLE) {
     result.variable_name = str_clone(&source->variable_name);
   } else if (source->type is CALC_EXPR_PLOT) {
+    // nothing
+  } else if (source->type is CALC_EXPR_FUNCTION) {
     result.function.name = str_clone(&source->function.name);
     result.function.args = vec_str_t_clone(&source->function.args);
-  } else if (source->type is CALC_EXPR_FUNCTION) {
-    // nothing
   } else if (source->type is CALC_EXPR_ACTION) {
     // nothinh
   } else {

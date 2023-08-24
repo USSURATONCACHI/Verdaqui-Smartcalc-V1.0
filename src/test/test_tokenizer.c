@@ -4,7 +4,6 @@
 #include <math.h>
 #include <string.h>
 
-
 #include "../calculator/calc_backend.h"
 #include "../parser/expr.h"
 #include "../util/prettify_c.h"
@@ -27,7 +26,7 @@ START_TEST(test_tokenize_one_token) {
       "-1e2", "-1.0e2", "- 1", "- 1.0",    "- 1e2",        "- 1.0e2",
       "sin",  "x",      "y",   "xadtgjip", "   snsinsin ", "(",
       ",",    ".",      ")",   "[",        "3941491e10",   "*",
-      "+=",   "-=",     "==", "1.", "123."};
+      "+=",   "-=",     "==",  "1.",       "123."};
 
   for (int i = 0; i < (int)LEN(examples); i++)
     ck_assert(tokens_count(examples[i]) is 1);
@@ -40,7 +39,7 @@ START_TEST(test_tokenize_two_tokens) {
                                   "* -1e2",       "+ -1.0e2", ", - 1",
                                   "( - 1.0",      ") - 1e2",  "x x",
                                   "++",           "=+",       "= =",
-                                  "( )", "15..", "15ea"};
+                                  "( )",          "15..",     "15ea"};
 
   for (int i = 0; i < (int)LEN(examples); i++)
     ck_assert_int_eq(tokens_count(examples[i]), 2);
@@ -86,11 +85,26 @@ START_TEST(test_tokenizer_symbols) {
 }
 END_TEST
 
-#define TokenIdent(literal) (Token){ .type = TOKEN_IDENT, .data.ident_text = { .start = (literal), .length = strlen(literal) } }
-#define TokenBracket(bracket) (Token){ .type = TOKEN_BRACKET, .data.bracket_symbol = (bracket) }
-#define TokenNumber(num) (Token) { .type = TOKEN_NUMBER, .data.number_number = (num) }
-#define TokenOperator(literal) (Token){.type = TOKEN_OPERATOR,  .data.operator_text = {.start = (literal), .length = strlen(literal)} }
-#define TokenComma (Token){ .type = TOKEN_COMMA }
+#define TokenIdent(literal)                   \
+  (Token) {                                   \
+    .type = TOKEN_IDENT, .data.ident_text = { \
+      .start = (literal),                     \
+      .length = strlen(literal)               \
+    }                                         \
+  }
+#define TokenBracket(bracket) \
+  (Token) { .type = TOKEN_BRACKET, .data.bracket_symbol = (bracket) }
+#define TokenNumber(num) \
+  (Token) { .type = TOKEN_NUMBER, .data.number_number = (num) }
+#define TokenOperator(literal)                      \
+  (Token) {                                         \
+    .type = TOKEN_OPERATOR, .data.operator_text = { \
+      .start = (literal),                           \
+      .length = strlen(literal)                     \
+    }                                               \
+  }
+#define TokenComma \
+  (Token) { .type = TOKEN_COMMA }
 
 START_TEST(test_token_print_ident) {
   StringStream stringstream = string_stream_create();
@@ -106,7 +120,7 @@ START_TEST(test_token_print_ident) {
 
   str_t string = string_stream_to_str_t(stringstream);
   // ck_assert_str_eq(string.string, "(my_variable<=>x,42.000000)");
-  str_free(string);  
+  str_free(string);
 }
 END_TEST
 
