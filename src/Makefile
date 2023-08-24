@@ -18,7 +18,7 @@ LIBRARIES_VERSION=
 
 RMRF=rm -rf
 MKDIR=mkdir -p
-CP=cp -r
+CP=cp -rf
 RENAME_FOLDER=mv
 DYLIB_EXT=.so
 EXEC_EXT=
@@ -173,6 +173,7 @@ glsl_compiler.a: ${GLSL_COMPILER_OBJS}
 	ranlib glsl_compiler.a
 
 install: ${TARGET_FILE}
+	${MKDIR} ../SmartCalc/
 	${CP} build/* ../SmartCalc/
 
 uninstall:
