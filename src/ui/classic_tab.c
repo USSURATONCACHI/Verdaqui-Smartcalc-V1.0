@@ -20,6 +20,7 @@ void classic_tab_free(ClassicTab tab) { nk_textedit_free(&tab.expr_text); }
 
 static void default_button(ClassicTab* this, struct nk_context* ctx,
                            const char* text);
+static void calculate(ClassicTab* this);
 
 void classic_tab_draw(ClassicTab* this, struct nk_context* ctx,
                       GLFWwindow* window) {
@@ -44,24 +45,7 @@ void classic_tab_draw(ClassicTab* this, struct nk_context* ctx,
     default_button(this, ctx, buttons_1[i]);
 
   if (nk_button_label(ctx, "=")) {
-    const char* buffer = nk_str_get_const(&this->expr_text.string);
-    int len = nk_str_len(&this->expr_text.string);
-
-    str_t owned = str_owned("%.*s", len, buffer);
-    ExprValueResult res = calc_calculate_expr(owned.string, this->x, this->y);
-    str_free(owned);
-
-    if (res.is_ok) {
-      str_t res_text = str_owned("%$expr_value", res.ok);
-      nk_str_clear(&this->expr_text.string);
-      nk_str_append_str_char(&this->expr_text.string, res_text.string);
-      str_free(res_text);
-
-      this->last_err_message = str_literal("");
-      expr_value_free(res.ok);
-    } else {
-      this->last_err_message = res.err_text;
-    }
+    calculate(this);
   }
 
   nk_spacer(ctx);
@@ -70,6 +54,27 @@ void classic_tab_draw(ClassicTab* this, struct nk_context* ctx,
 
   for (int i = 0; i < (int)LEN(buttons_2); i++)
     default_button(this, ctx, buttons_2[i]);
+}
+
+static void calculate(ClassicTab* this) {
+  const char* buffer = nk_str_get_const(&this->expr_text.string);
+  int len = nk_str_len(&this->expr_text.string);
+
+  str_t owned = str_owned("%.*s", len, buffer);
+  ExprValueResult res = calc_calculate_expr(owned.string, this->x, this->y);
+  str_free(owned);
+
+  if (res.is_ok) {
+    str_t res_text = str_owned("%$expr_value", res.ok);
+    nk_str_clear(&this->expr_text.string);
+    nk_str_append_str_char(&this->expr_text.string, res_text.string);
+    str_free(res_text);
+
+    this->last_err_message = str_literal("");
+    expr_value_free(res.ok);
+  } else {
+    this->last_err_message = res.err_text;
+  }
 }
 
 static void default_button(ClassicTab* this, struct nk_context* ctx,

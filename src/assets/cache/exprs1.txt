@@ -1,6 +1,0 @@
-dist(pos) = 1 / (1 + (x - pos)^2)
-abs(x) = sqrt(x^2)
-rad(a) = a * pi / 180
-sq_arg(x, y, ang) = 2x * cos(rad(ang+45)) + 2y * sin(rad(ang+45))
-square(x, y, ang) = (1 - abs(sq_arg(x, y, ang))) + (1 - abs(sq_arg(y, -x, ang)))
-sin cos tan tan sin cos (x y sin(x) sin(y))

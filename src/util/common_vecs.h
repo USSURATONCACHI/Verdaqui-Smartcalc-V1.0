@@ -2,19 +2,15 @@
 #define SRC_UTIL_COMMON_VECS_H_
 
 // vec_char header + implementation
-#define VECTOR_ITEM_TYPE char
+#define VECTOR_H char
 #include "../util/vector.h"
-#undef VECTOR_ITEM_TYPE
 
 // vec_void_ptr header + implementation
 typedef void* void_ptr;
-#define VECTOR_ITEM_TYPE void_ptr
+#define VECTOR_H void_ptr
 #include "../util/vector.h"
-#undef VECTOR_ITEM_TYPE
 
-// vec_char header + implementation
-#define VECTOR_ITEM_TYPE double
+#define VECTOR_H double
 #include "../util/vector.h"
-#undef VECTOR_ITEM_TYPE
 
 #endif  // SRC_UTIL_COMMON_VECS_H_

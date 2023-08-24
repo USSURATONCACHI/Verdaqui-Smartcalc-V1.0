@@ -171,7 +171,21 @@ calculator.a: ${CALCULATOR_OBJS}
 glsl_compiler.a: ${GLSL_COMPILER_OBJS}
 	ar -rc glsl_compiler.a ${GLSL_COMPILER_OBJS}
 	ranlib glsl_compiler.a
+
+install: ${TARGET_FILE}
+	${CP} build/* ../SmartCalc/
+
+uninstall:
+	${RMRF} ../SmartCalc/
+
+dist:
+	cd .. && tar -czf src/smartcalc-verdaqui-dist.tar.gz src/Makefile src/*.c src/*.h src/*/*.c src/*/*.h src/*/*/*.c src/*/*/*.h sane_windows/sane_utils.tar.gz libraries/compressed.tar.gz include
 	
+dvi:
+	echo If make fails to open the file, it means, Make cannot open PDF files on your system. You can open ../docs/index.pdf manually in your favourite PDF viewer instead. Also, there is a markdown index.md analogue.
+	echo .
+	./../docs/index.pdf
+
 # Target file TDOOTODOTODOT TODO
 ${TARGET_FILE}: ${OTHER_OBJS} ui.a glsl_compiler.a calculator.a parser.a util.a | ${BUILD_DIR}/assets ${LIBRARIES_DIR}/lib.cache ${MKDIR_EXE} ${CP_EXE}
 	@echo
@@ -240,6 +254,7 @@ clean: clean_lite | ${RMRF_EXE}
 	${RMRF}	report
 	${RMRF}	gcov_bin
 	${RMRF}	test.info
+	${RMRF} smartcalc-verdaqui-dist.tar.gz
 
 gitignore:
 	mv ../.gitignore ../.gitignore-original

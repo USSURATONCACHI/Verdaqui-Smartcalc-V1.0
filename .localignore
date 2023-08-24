@@ -61,3 +61,4 @@ src/smartcalc
 src/*.a
 *.gcov*
 *.zip
+.gitignore-original
