@@ -536,11 +536,11 @@ ExprVariableInfo cb_get_variable_info(CalcBackend* this, StrSlice var_name) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-braces"
       ExprVariableInfo res = {
-        .is_const = false,
-        .value = null,
-        .value_type = VALUE_TYPE_UNKNOWN,
-        .expression = null,
-        .correct_context = null,
+          .is_const = false,
+          .value = null,
+          .value_type = VALUE_TYPE_UNKNOWN,
+          .expression = null,
+          .correct_context = null,
       };
 #pragma GCC diagnostic pop
       return res;

@@ -55,7 +55,6 @@ START_TEST(test_fctx_2) {
 }
 END_TEST
 
-
 START_TEST(test_fctx_3) {
   DEFAULT_FCTX_INIT
 
@@ -85,7 +84,6 @@ START_TEST(test_fctx_4) {
 }
 END_TEST
 
-
 START_TEST(test_fctx_5) {
   DEFAULT_FCTX_INIT
 
@@ -96,7 +94,6 @@ START_TEST(test_fctx_5) {
   calc_backend_free(backend);
 }
 END_TEST
-
 
 START_TEST(test_fctx_6) {
   DEFAULT_FCTX_INIT
@@ -112,7 +109,8 @@ END_TEST
 START_TEST(test_fctx_7) {
   DEFAULT_FCTX_INIT
 
-  ExprFunctionInfo info = ctx.vtable->get_function_info(ctx.data, Slice("noop"));
+  ExprFunctionInfo info =
+      ctx.vtable->get_function_info(ctx.data, Slice("noop"));
   ck_assert(not info.is_const);
 
   vec_str_t_free(used_args);

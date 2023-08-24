@@ -60,3 +60,4 @@ src/*/*/*.o
 src/smartcalc
 src/*.a
 *.gcov*
+*.zip
