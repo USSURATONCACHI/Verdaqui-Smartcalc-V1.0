@@ -1,14 +1,14 @@
 # SmartCalc v1.0
 
-So, that is a graphing calculator in pure C + OpenGL + Nuklear (immediate-mode ui library).
+ Graphing calculator in pure C + OpenGL + Nuklear (immediate-mode ui library).
 
 ## Features
 
-- Cross platform! MacOS, Windows and Linux support out-of-the-box.
-- Custom implemented graph renderer with smooth camera control with just OpenGL. NO GRAPHING LIBRARY IS USED.
-- Fully implemented mathematical expressions parser. Full documentation on calculator capabilities is here: [docs/index.md](docs/index.md)
-- Pure C, no templates bloat of C++, no JS bullshit, no python slowness.
-- FAST. Maybe even blazingly so.
+- Cross platform. MacOS, Windows and Linux support out-of-the-box.
+- Custom implemented graph renderer with smooth camera control with just OpenGL.
+- Fully implemented mathematical expressions parser&compiler. Full documentation on calculator capabilities is here: [docs/index.md](docs/index.md)
+- Pure C.
+- Fast. Maybe even blazingly so.
 - Supports function definitions, like this:
 ```
 f(x) = sin x
